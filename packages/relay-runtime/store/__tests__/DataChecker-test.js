@@ -1612,7 +1612,7 @@ describe('check()', () => {
       graphql`
         fragment DataCheckerTest7Fragment on Feedback {
           id
-          actors @stream(label: "TestFragmentActors", initial_count: 0) {
+          actors @stream(label: "TestFragmentActors", initialCount: 0) {
             name
           }
         }

@@ -106,7 +106,7 @@ function ActorChangeComponent(
         }
         feedback {
           id
-          actors @stream(initial_count: 1) {
+          actors @stream(initialCount: 1) {
             name
           }
         }
