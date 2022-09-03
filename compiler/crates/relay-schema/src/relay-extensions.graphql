@@ -128,7 +128,7 @@ directive @stream_connection(
   filters: [String]
   handler: String
   label: String
-  initial_count: Int!
+  initialCount: Int!
   if: Boolean = true
   use_customized_batch: Boolean = false
   dynamicKey_UNSTABLE: String

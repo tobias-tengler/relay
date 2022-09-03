@@ -52,7 +52,7 @@ function FriendsListComponent(props: Props) {
       @refetchable(queryName: "FriendsListPaginationQuery") {
         name
         friends(first: $count, after: $cursor)
-        @stream_connection(key: "FriendsList_user_friends", initial_count: 2,) {
+        @stream_connection(key: "FriendsList_user_friends", initialCount: 2,) {
           edges {
             node {
               name
@@ -74,7 +74,7 @@ module.exports = FriendsListComponent;
 Let's distill what's happening here:
 
 * The `@stream_connection` directive can be used directly in place of the `@connection` directive; it accepts the same arguments as @connection plus additional, *optional* parameters to control streaming:
-    * `initial_count: Int`: A number (defaulting to zero) that controls how many items will be included in the initial payload. Any subsequent items are streamed, so when set to zero the list will initially be empty and all items will be streamed. Note that this number does not affect how many items are returned *total*, only how many items are included in the initial payload. For example, consider a product that today makes an initial fetch for 2 items and then *immediately* issues a pagination query to fetch 3 more. With streaming, this product could instead choose to fetch 5 items in the initial query with initial_count=2, in order to fetch the 2 items quickly while avoiding a round trip for the subsequent 3 items.
+    * `initialCount: Int`: A number (defaulting to zero) that controls how many items will be included in the initial payload. Any subsequent items are streamed, so when set to zero the list will initially be empty and all items will be streamed. Note that this number does not affect how many items are returned *total*, only how many items are included in the initial payload. For example, consider a product that today makes an initial fetch for 2 items and then *immediately* issues a pagination query to fetch 3 more. With streaming, this product could instead choose to fetch 5 items in the initial query with initialCount=2, in order to fetch the 2 items quickly while avoiding a round trip for the subsequent 3 items.
 * As with regular usage of `usePaginationFragment`, the connection will be automatically updated as new items are streamed in from the server, and the component will re-render each time with the latest items in the connection.
 
 

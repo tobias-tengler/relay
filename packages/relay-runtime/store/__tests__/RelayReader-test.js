@@ -1540,7 +1540,7 @@ describe('RelayReader', () => {
         UserProfile = graphql`
           fragment RelayReaderTestStreamConnectionUserProfile on User {
             friends(first: 3)
-              @stream_connection(key: "UserProfile_friends", initial_count: 0) {
+              @stream_connection(key: "UserProfile_friends", initialCount: 0) {
               edges {
                 node {
                   name

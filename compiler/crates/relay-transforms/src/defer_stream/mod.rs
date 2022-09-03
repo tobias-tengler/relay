@@ -51,7 +51,6 @@ pub struct DeferStreamConstants {
     pub if_arg: ArgumentName,
     pub label_arg: ArgumentName,
     pub initial_count_arg: ArgumentName,
-    pub stream_connection_initial_count_arg: ArgumentName,
     pub use_customized_batch_arg: ArgumentName,
 }
 
@@ -63,7 +62,6 @@ impl Default for DeferStreamConstants {
             if_arg: ArgumentName("if".intern()),
             label_arg: ArgumentName("label".intern()),
             initial_count_arg: ArgumentName("initialCount".intern()),
-            stream_connection_initial_count_arg: ArgumentName("initial_count".intern()),
             use_customized_batch_arg: ArgumentName("use_customized_batch".intern()),
         }
     }

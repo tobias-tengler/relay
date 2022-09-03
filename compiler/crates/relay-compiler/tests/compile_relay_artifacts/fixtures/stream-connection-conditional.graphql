@@ -6,7 +6,7 @@ query streamConnectionConditionalQuery($id: ID!, $cond: Boolean!) {
       @stream_connection(
         use_customized_batch: $cond
         if: $cond
-        initial_count: 0
+        initialCount: 0
         key: "NodeQuery_comments"
       ) {
         edges {
