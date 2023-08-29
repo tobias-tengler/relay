@@ -134,6 +134,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@1.72.0
+        components: rustfmt
       - name: "rustfmt"
         run: grep -r --include "*.rs" --files-without-match "@generated" crates | xargs rustfmt --check --config="skip_children=true"
         working-directory: ./compiler/
@@ -170,6 +172,8 @@ jobs:
     runs-on: ${{ matrix.target.os }}
     steps:
       - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@1.72.0
+        target: ${{ matrix.target.target }}
       - uses: actions/setup-node@v2
         if: github.event_name == 'push' && github.repository == 'facebook/relay' && github.ref == 'refs/heads/main'
         with:
