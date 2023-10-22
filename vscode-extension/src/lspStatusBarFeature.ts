@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {Disposable} from 'vscode';
+import {Disposable, ThemeColor} from 'vscode';
 import {StaticFeature, RequestType, FeatureState} from 'vscode-languageclient';
 import {RelayExtensionContext} from './context';
 
@@ -85,6 +85,24 @@ function getStatusBarIcon(params: ShowStatusParams): string {
   return 'extensions-info-message';
 }
 
+function getStatusBarBackgroundColor(params: ShowStatusParams): ThemeColor {
+  switch (params.type) {
+    case ShowStatusMessageType.Error:
+      return new ThemeColor('statusBarItem.errorBackground');
+    default:
+      return new ThemeColor('statusBar.background');
+  }
+}
+
+function getStatusBarColor(params: ShowStatusParams): ThemeColor {
+  switch (params.type) {
+    case ShowStatusMessageType.Error:
+      return new ThemeColor('statusBarItem.errorForeground');
+    default:
+      return new ThemeColor('statusBar.foreground');
+  }
+}
+
 // A lot of the data from the window/showStatus command is ignored.
 // On the LSP Server, we only make use of the following properties
 //
@@ -101,10 +119,14 @@ export function handleShowStatusMethod(
   const icon = getStatusBarIcon(params);
   const text = getStatusBarText(params);
   const tooltipText = getStatusBarTooltip(params);
+  const backgroundColor = getStatusBarBackgroundColor(params);
+  const color = getStatusBarColor(params);
 
   if (text) {
     const textWithIcon = `$(${icon}) ${text}`;
 
+    context.statusBar.backgroundColor = backgroundColor;
+    context.statusBar.color = color;
     context.statusBar.text = textWithIcon;
     context.statusBar.tooltip = tooltipText;
 
