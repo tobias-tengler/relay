@@ -19,5 +19,6 @@ export function createStatusBarItem(): StatusBarItem {
 }
 
 export function intializeStatusBarItem(context: RelayExtensionContext) {
-  context.statusBar.text = '$(info) Starting...';
+  context.statusBar.text = '$(loading~spin) Relay';
+  context.statusBar.show();
 }

@@ -66,23 +66,22 @@ function getStatusBarTooltip(params: ShowStatusParams): string | undefined {
 
 // All possible icons can be found here https://code.visualstudio.com/api/references/icons-in-labels#icon-listing
 function getStatusBarIcon(params: ShowStatusParams): string {
-  if (params.type === ShowStatusMessageType.Log) {
-    return 'info';
+  if (params.progress) {
+    return 'loading~spin';
   }
 
-  if (params.type === ShowStatusMessageType.Info) {
-    return 'run';
+  switch (params.type) {
+    case ShowStatusMessageType.Log:
+      return 'info';
+    case ShowStatusMessageType.Info:
+      return 'run';
+    case ShowStatusMessageType.Error:
+      return 'error';
+    case ShowStatusMessageType.Warning:
+      return 'warning';
+    default:
+      return 'extensions-info-message';
   }
-
-  if (params.type === ShowStatusMessageType.Error) {
-    return 'error';
-  }
-
-  if (params.type === ShowStatusMessageType.Warning) {
-    return 'warning';
-  }
-
-  return 'extensions-info-message';
 }
 
 function getStatusBarBackgroundColor(params: ShowStatusParams): ThemeColor {
