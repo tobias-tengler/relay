@@ -11,6 +11,11 @@
     "rust-analyzer.rustfmt.extraArgs": [
       "+nightly"
     ],
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/target": true
+    }
 
 
     // Enable these to get Relay GraphQL editor support working on test files.
