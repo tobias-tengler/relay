@@ -136,6 +136,8 @@ pub trait GlobalState {
     /// we may need to know who's our current consumer.
     /// This is mostly for hover handler (where we render markup)
     fn get_content_consumer_type(&self) -> ContentConsumerType;
+
+    fn is_file_part_of_project(&self, uri: &Url) -> bool;
 }
 
 /// This structure contains all available resources that we may use in the Relay LSP message/notification
@@ -546,6 +548,15 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
 
     fn get_content_consumer_type(&self) -> ContentConsumerType {
         ContentConsumerType::Relay
+    }
+
+    fn is_file_part_of_project(&self, uri: &Url) -> bool {
+        let root_dir = self.root_dir();
+
+        match uri.to_file_path() {
+            Ok(file_path) => file_path.starts_with(root_dir),
+            Err(()) => false,
+        }
     }
 }
 

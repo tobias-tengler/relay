@@ -39,39 +39,38 @@ use serde_json::Value;
 use crate::lsp_runtime_error::LSPRuntimeError;
 use crate::lsp_runtime_error::LSPRuntimeResult;
 use crate::server::GlobalState;
-use crate::utils::is_file_uri_in_dir;
 
 pub(crate) fn on_code_action(
-    state: &impl GlobalState,
+    lsp_state: &impl GlobalState,
     params: <CodeActionRequest as Request>::Params,
 ) -> LSPRuntimeResult<<CodeActionRequest as Request>::Result> {
     let uri = params.text_document.uri.clone();
 
-    if !is_file_uri_in_dir(state.root_dir(), &uri) {
+    if !lsp_state.is_file_part_of_project(&uri) {
         return Err(LSPRuntimeError::ExpectedError);
     }
 
-    if let Some(js_server) = state.get_js_language_sever() {
-        if let Ok(result) = js_server.on_code_action(&params, state) {
+    if let Some(js_server) = lsp_state.get_js_language_sever() {
+        if let Ok(result) = js_server.on_code_action(&params, lsp_state) {
             return Ok(result);
         }
     }
 
-    if let Some(diagnostic) = state.get_diagnostic_for_range(&uri, params.range) {
+    if let Some(diagnostic) = lsp_state.get_diagnostic_for_range(&uri, params.range) {
         let code_actions = get_code_actions_from_diagnostics(&uri, diagnostic);
         if code_actions.is_some() {
             return Ok(code_actions);
         }
     }
 
-    let definitions = state.resolve_executable_definitions(&params.text_document.uri)?;
+    let definitions = lsp_state.resolve_executable_definitions(&params.text_document.uri)?;
 
     let text_document_position_params = TextDocumentPositionParams {
         text_document: params.text_document,
         position: params.range.start,
     };
     let (document, position_span) =
-        state.extract_executable_document_from_text(&text_document_position_params, 1)?;
+        lsp_state.extract_executable_document_from_text(&text_document_position_params, 1)?;
 
     let path = document.resolve((), position_span);
 

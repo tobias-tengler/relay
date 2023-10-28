@@ -19,7 +19,6 @@ use lsp_types::TextDocumentItem;
 
 use crate::lsp_runtime_error::LSPRuntimeResult;
 use crate::server::GlobalState;
-use crate::utils::is_file_uri_in_dir;
 
 pub fn on_did_open_text_document(
     lsp_state: &impl GlobalState,
@@ -28,7 +27,7 @@ pub fn on_did_open_text_document(
     let DidOpenTextDocumentParams { text_document } = params;
     let TextDocumentItem { text, uri, .. } = text_document;
 
-    if !is_file_uri_in_dir(lsp_state.root_dir(), &uri) {
+    if !lsp_state.is_file_part_of_project(&uri) {
         return Ok(());
     }
 
@@ -42,7 +41,7 @@ pub fn on_did_close_text_document(
 ) -> LSPRuntimeResult<()> {
     let uri = params.text_document.uri;
 
-    if !is_file_uri_in_dir(lsp_state.root_dir(), &uri) {
+    if !lsp_state.is_file_part_of_project(&uri) {
         return Ok(());
     }
 
@@ -59,7 +58,7 @@ pub fn on_did_change_text_document(
     } = params;
     let uri = text_document.uri;
 
-    if !is_file_uri_in_dir(lsp_state.root_dir(), &uri) {
+    if !lsp_state.is_file_part_of_project(&uri) {
         return Ok(());
     }
 
