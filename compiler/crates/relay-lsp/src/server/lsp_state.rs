@@ -345,13 +345,6 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
         uri: &Url,
         sources: Vec<JavaScriptSourceFeature>,
     ) -> LSPRuntimeResult<()> {
-        let project_name = self.extract_project_name_from_url(uri)?;
-
-        if let Entry::Vacant(e) = self.project_status.entry(project_name) {
-            e.insert(ProjectStatus::Activated);
-            self.notify_lsp_state_resources.notify_one();
-        }
-
         self.insert_synced_sources(uri, sources);
         self.schedule_task(Task::ValidateSyncedSource(uri.clone()));
 
@@ -518,6 +511,19 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
 
         // First we check to see if this document has any GraphQL documents.
         let embedded_sources = extract_graphql::extract(text);
+
+        let should_init_lsp_resources =
+            !embedded_sources.is_empty() || uri.as_str().ends_with(".graphql");
+
+        if should_init_lsp_resources {
+            let project_name = self.extract_project_name_from_url(uri)?;
+
+            if let Entry::Vacant(e) = self.project_status.entry(project_name) {
+                e.insert(ProjectStatus::Activated);
+                self.notify_lsp_state_resources.notify_one();
+            }
+        }
+
         if embedded_sources.is_empty() {
             Ok(())
         } else {

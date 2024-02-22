@@ -86,25 +86,27 @@ pub fn extract_project_name_from_url(
         ))
     })?;
 
-    let project_name = if let FileGroup::Source { project_set } =
-        file_categorizer.categorize(file_path).map_err(|_| {
-            LSPRuntimeError::UnexpectedError(format!(
-                "Unable to categorize the file correctly: {:?}",
-                file_path
-            ))
-        })? {
-        *project_set.first().ok_or_else(|| {
-            LSPRuntimeError::UnexpectedError(format!(
-                "Expected to find at least one project for {:?}",
-                file_path
-            ))
-        })?
-    } else {
-        return Err(LSPRuntimeError::UnexpectedError(format!(
+    let category = file_categorizer.categorize(file_path).map_err(|_| {
+        LSPRuntimeError::UnexpectedError(format!(
+            "Unable to categorize the file correctly: {:?}",
+            file_path
+        ))
+    })?;
+    let project_set = match category {
+        FileGroup::Source { project_set } => Ok(project_set),
+        FileGroup::Schema { project_set } => Ok(project_set),
+        _ => Err(LSPRuntimeError::UnexpectedError(format!(
             "File path {:?} is not a source set",
             file_path
-        )));
-    };
+        ))),
+    }?;
+    let project_name = *project_set.first().ok_or_else(|| {
+        LSPRuntimeError::UnexpectedError(format!(
+            "Expected to find at least one project for {:?}",
+            file_path
+        ))
+    })?;
+
     Ok(project_name.into())
 }
 
