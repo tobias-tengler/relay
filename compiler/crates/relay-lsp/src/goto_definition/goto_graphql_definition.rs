@@ -10,6 +10,7 @@ use std::sync::Arc;
 use common::Span;
 use graphql_ir::FragmentDefinitionName;
 use graphql_syntax::ExecutableDocument;
+use graphql_syntax::SchemaDocument;
 use intern::string_key::StringKey;
 use resolution_path::IdentParent;
 use resolution_path::IdentPath;
@@ -24,6 +25,30 @@ use schema::SDLSchema;
 use super::DefinitionDescription;
 use crate::lsp_runtime_error::LSPRuntimeError;
 use crate::lsp_runtime_error::LSPRuntimeResult;
+
+pub fn get_schema_definition_description(
+    document: &SchemaDocument,
+    position_span: Span,
+    _schema: &Arc<SDLSchema>,
+) -> LSPRuntimeResult<DefinitionDescription> {
+    let node_path = document.resolve((), position_span);
+
+    match node_path {
+        ResolutionPath::Ident(IdentPath {
+            inner: union_type_member_name,
+            parent: IdentParent::UnionTypeMemberName(_),
+        }) => Ok(DefinitionDescription::Type {
+            type_name: union_type_member_name.value,
+        }),
+        ResolutionPath::Ident(IdentPath {
+            inner: implemented_interface_name,
+            parent: IdentParent::ImplementedInterfaceTypeName(_),
+        }) => Ok(DefinitionDescription::Type {
+            type_name: implemented_interface_name.value,
+        }),
+        _ => Err(LSPRuntimeError::ExpectedError),
+    }
+}
 
 pub fn get_graphql_definition_description(
     document: ExecutableDocument,

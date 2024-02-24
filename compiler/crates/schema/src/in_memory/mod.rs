@@ -1187,6 +1187,7 @@ impl InMemorySchema {
                 locations,
                 description,
                 hack_source,
+                ..
             }) => {
                 if self.directives.contains_key(&DirectiveName(name.value)) {
                     let str_name = name.value.lookup();
@@ -1217,6 +1218,7 @@ impl InMemorySchema {
                 interfaces,
                 fields,
                 directives,
+                ..
             }) => {
                 let parent_id = Type::Object(ObjectID(self.objects.len() as u32));
                 let fields = if is_extension {
@@ -1252,6 +1254,7 @@ impl InMemorySchema {
                 interfaces,
                 directives,
                 fields,
+                ..
             }) => {
                 let parent_id = Type::Interface(InterfaceID(self.interfaces.len() as u32));
                 let fields = if is_extension {
@@ -1288,6 +1291,7 @@ impl InMemorySchema {
                 name,
                 directives,
                 members,
+                ..
             }) => {
                 let members = members
                     .iter()
@@ -1376,6 +1380,7 @@ impl InMemorySchema {
                 interfaces,
                 fields,
                 directives,
+                ..
             }) => match self.type_map.get(&name.value).cloned() {
                 Some(Type::Object(id)) => {
                     let index = id.as_usize();
@@ -1429,6 +1434,7 @@ impl InMemorySchema {
                 interfaces,
                 fields,
                 directives,
+                ..
             }) => match self.type_map.get(&name.value).cloned() {
                 Some(Type::Interface(id)) => {
                     let index = id.as_usize();
@@ -1616,10 +1622,11 @@ impl InMemorySchema {
                 let field_name = field_def.name.value;
                 let field_location = Location::new(source_location_key, field_def.name.span);
                 if let Some(prev_location) = existing_fields.insert(field_name, field_location) {
-                    return Err(vec![
-                        Diagnostic::error(SchemaError::DuplicateField(field_name), field_location)
-                            .annotate("previously defined here", prev_location),
-                    ]);
+                    return Err(vec![Diagnostic::error(
+                        SchemaError::DuplicateField(field_name),
+                        field_location,
+                    )
+                    .annotate("previously defined here", prev_location)]);
                 }
                 let arguments = self.build_arguments(&field_def.arguments)?;
                 let directives = self.build_directive_values(&field_def.directives);
@@ -1825,6 +1832,7 @@ mod tests {
                     interfaces: vec![identifier_from_value("ITunes".intern())],
                     directives: vec![],
                     fields: None,
+                    span: Span::empty(),
                 },
                 SourceLocationKey::Generated,
             )

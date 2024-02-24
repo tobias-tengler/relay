@@ -29,6 +29,7 @@ use serde::Serialize;
 
 use self::goto_docblock_definition::get_docblock_definition_description;
 use self::goto_graphql_definition::get_graphql_definition_description;
+use crate::goto_definition::goto_graphql_definition::get_schema_definition_description;
 use crate::location::transform_relay_location_to_lsp_location;
 use crate::lsp_runtime_error::LSPRuntimeError;
 use crate::lsp_runtime_error::LSPRuntimeResult;
@@ -56,6 +57,10 @@ pub fn on_goto_definition(
     state: &impl GlobalState,
     params: <GotoDefinition as Request>::Params,
 ) -> LSPRuntimeResult<<GotoDefinition as Request>::Result> {
+    info!(
+        "on_goto_definition: {:?}",
+        params.text_document_position_params.text_document.uri
+    );
     let (feature, position_span) =
         state.extract_feature_from_text(&params.text_document_position_params, 1)?;
 
@@ -66,10 +71,14 @@ pub fn on_goto_definition(
 
     let definition_description = match feature {
         crate::Feature::GraphQLDocument(document) => {
+            info!("executable_document: {:?}", document);
             get_graphql_definition_description(document, position_span, &schema)?
         }
         crate::Feature::DocblockIr(docblock_ir) => {
             get_docblock_definition_description(&docblock_ir, position_span)?
+        }
+        crate::Feature::Schema(schema_document) => {
+            get_schema_definition_description(&schema_document, position_span, &schema)?
         }
     };
 

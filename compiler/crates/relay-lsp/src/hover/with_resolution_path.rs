@@ -428,6 +428,8 @@ fn get_hover_behavior_from_resolution_path<'a>(path: &'a ResolutionPath<'a>) -> 
 
         // Explicitly show no hover content of operation/fragment definitions
         ResolutionPath::ExecutableDocument(_) => HoverBehavior::ExecutableDocument,
+
+        _ => panic!("Not yet implemented"),
     }
 }
 

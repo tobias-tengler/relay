@@ -13,6 +13,7 @@ use graphql_syntax::ConstantArgument;
 use graphql_syntax::ConstantValue;
 use graphql_syntax::DefaultValue;
 use graphql_syntax::Directive;
+use graphql_syntax::DirectiveDefinition;
 use graphql_syntax::EnumNode;
 use graphql_syntax::ExecutableDefinition;
 use graphql_syntax::ExecutableDocument;
@@ -21,20 +22,25 @@ use graphql_syntax::FragmentDefinition;
 use graphql_syntax::FragmentSpread;
 use graphql_syntax::Identifier;
 use graphql_syntax::InlineFragment;
+use graphql_syntax::InputValueDefinition;
 use graphql_syntax::IntNode;
+use graphql_syntax::InterfaceTypeDefinition;
 use graphql_syntax::LinkedField;
 use graphql_syntax::List;
 use graphql_syntax::ListTypeAnnotation;
 use graphql_syntax::NamedTypeAnnotation;
 use graphql_syntax::NonNullTypeAnnotation;
+use graphql_syntax::ObjectTypeDefinition;
 use graphql_syntax::OperationDefinition;
 use graphql_syntax::OperationKind;
 use graphql_syntax::ScalarField;
+use graphql_syntax::SchemaDocument;
 use graphql_syntax::Selection;
 use graphql_syntax::StringNode;
 use graphql_syntax::Token;
 use graphql_syntax::TypeAnnotation;
 use graphql_syntax::TypeCondition;
+use graphql_syntax::UnionTypeDefinition;
 use graphql_syntax::Value;
 use graphql_syntax::VariableDefinition;
 use graphql_syntax::VariableIdentifier;
@@ -43,6 +49,7 @@ mod constant_value_root;
 pub use constant_value_root::ConstantValueRoot;
 mod argument_root;
 pub use argument_root::*;
+use schema::TypeSystemDefinition;
 mod selection_parent_type;
 mod variable_definition_path;
 
@@ -133,6 +140,13 @@ pub enum ResolutionPath<'a> {
     ListTypeAnnotation(ListTypeAnnotationPath<'a>),
     NonNullTypeAnnotation(NonNullTypeAnnotationPath<'a>),
     DefaultValue(DefaultValuePath<'a>),
+
+    SchemaDocument(&'a SchemaDocument),
+    DirectiveDefinition(DirectiveDefinitionPath<'a>),
+    InputValueDefinition(InputValueDefinitionPath<'a>),
+    UnionTypeDefinition(UnionTypeDefinitionPath<'a>),
+    InterfaceTypeDefinition(InterfaceTypeDefinitionPath<'a>),
+    ObjectTypeDefinition(ObjectTypeDefinitionPath<'a>),
 }
 #[derive(Debug)]
 pub struct Path<Inner, Parent> {
@@ -532,6 +546,14 @@ pub enum IdentParent<'a> {
     ArgumentValue(ArgumentPath<'a>),
     NamedTypeAnnotation(NamedTypeAnnotationPath<'a>),
     ConstantArgKey(ConstantArgPath<'a>),
+
+    DirectiveDefinitionName(DirectiveDefinitionPath<'a>),
+    UnionTypeDefinitionName(UnionTypeDefinitionPath<'a>),
+    UnionTypeMemberName(UnionTypeDefinitionPath<'a>),
+    InterfaceTypeDefinitionName(InterfaceTypeDefinitionPath<'a>),
+    // TODO: Better name?
+    ImplementedInterfaceTypeName(ObjectTypeDefinitionPath<'a>),
+    ObjectTypeDefinitionName(ObjectTypeDefinitionPath<'a>),
 }
 
 impl<'a> ResolvePosition<'a> for Identifier {
@@ -1018,6 +1040,206 @@ impl<'a> ResolvePosition<'a> for List<Argument> {
             }
         }
         ResolutionPath::ConstantObject(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+// --------------------------------------------------------------------------------------
+
+pub type SchemaDocumentPath<'a> = Path<&'a SchemaDocument, ()>;
+
+impl<'a> ResolvePosition<'a> for SchemaDocument {
+    type Parent = ();
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        for definition in &self.definitions {
+            if definition.contains(position) {
+                return definition.resolve(self.path(parent), position);
+            }
+        }
+
+        // We didn't find the position in the definitions
+        ResolutionPath::SchemaDocument(self)
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.location.span().contains(position)
+    }
+}
+
+pub type TypeSystemDefinitionPath<'a> =
+    Path<&'a TypeSystemDefinition, TypeSystemDefinitionParent<'a>>;
+pub type TypeSystemDefinitionParent<'a> = SchemaDocumentPath<'a>;
+
+impl<'a> ResolvePosition<'a> for TypeSystemDefinition {
+    type Parent = TypeSystemDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        match self {
+            TypeSystemDefinition::DirectiveDefinition(directive) => {
+                directive.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::UnionTypeDefinition(union) => {
+                union.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::InterfaceTypeDefinition(interface) => {
+                interface.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::ObjectTypeDefinition(object) => {
+                object.resolve(self.path(parent), position)
+            }
+            _ => panic!("Unknown path"),
+        }
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        match self {
+            TypeSystemDefinition::DirectiveDefinition(directive) => directive.contains(position),
+            TypeSystemDefinition::UnionTypeDefinition(union) => union.contains(position),
+            TypeSystemDefinition::InterfaceTypeDefinition(interface) => {
+                interface.contains(position)
+            }
+            TypeSystemDefinition::ObjectTypeDefinition(object) => object.contains(position),
+            _ => false,
+        }
+    }
+}
+
+pub type DirectiveDefinitionPath<'a> = Path<&'a DirectiveDefinition, DirectiveDefinitionParent<'a>>;
+pub type DirectiveDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for DirectiveDefinition {
+    type Parent = DirectiveDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::DirectiveDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        if let Some(arguments) = &self.arguments {
+            for argument in &arguments.items {
+                if argument.contains(position) {
+                    return argument.resolve(
+                        // TODO: Inputvalueparent
+                        self.path(parent),
+                        position,
+                    );
+                }
+            }
+        }
+
+        // TODO: Implement
+
+        ResolutionPath::DirectiveDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type InputValueDefinitionPath<'a> =
+    Path<&'a InputValueDefinition, InputValueDefinitionParent<'a>>;
+// TODO: Probably has multiple
+pub type InputValueDefinitionParent<'a> = DirectiveDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for InputValueDefinition {
+    type Parent = InputValueDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, _position: Span) -> ResolutionPath<'a> {
+        ResolutionPath::InputValueDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type UnionTypeDefinitionPath<'a> = Path<&'a UnionTypeDefinition, UnionTypeDefinitionParent<'a>>;
+pub type UnionTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for UnionTypeDefinition {
+    type Parent = UnionTypeDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::UnionTypeDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        for member in &self.members {
+            if member.contains(position) {
+                return member.resolve(
+                    IdentParent::UnionTypeMemberName(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        ResolutionPath::UnionTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type InterfaceTypeDefinitionPath<'a> =
+    Path<&'a InterfaceTypeDefinition, InterfaceTypeDefinitionParent<'a>>;
+pub type InterfaceTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for InterfaceTypeDefinition {
+    type Parent = InterfaceTypeDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::InterfaceTypeDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::InterfaceTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type ObjectTypeDefinitionPath<'a> =
+    Path<&'a ObjectTypeDefinition, ObjectTypeDefinitionParent<'a>>;
+pub type ObjectTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for ObjectTypeDefinition {
+    type Parent = ObjectTypeDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::ObjectTypeDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        for interface in &self.interfaces {
+            if interface.contains(position) {
+                return interface.resolve(
+                    IdentParent::ImplementedInterfaceTypeName(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        ResolutionPath::ObjectTypeDefinition(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {

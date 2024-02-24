@@ -75,34 +75,40 @@ impl fmt::Display for TypeSystemDefinition {
                 interfaces,
                 fields,
                 directives,
+                ..
             }) => write_object_helper(f, &name.value, interfaces, fields, directives, false),
             TypeSystemDefinition::ObjectTypeExtension(ObjectTypeExtension {
                 name,
                 interfaces,
                 fields,
                 directives,
+                ..
             }) => write_object_helper(f, &name.value, interfaces, fields, directives, true),
             TypeSystemDefinition::InterfaceTypeDefinition(InterfaceTypeDefinition {
                 name,
                 interfaces,
                 fields,
                 directives,
+                ..
             }) => write_interface_helper(f, &name.value, interfaces, fields, directives, false),
             TypeSystemDefinition::InterfaceTypeExtension(InterfaceTypeExtension {
                 name,
                 interfaces,
                 fields,
                 directives,
+                ..
             }) => write_interface_helper(f, &name.value, interfaces, fields, directives, true),
             TypeSystemDefinition::UnionTypeDefinition(UnionTypeDefinition {
                 name,
                 directives,
                 members,
+                ..
             }) => write_union_type_definition_helper(f, &name.value, directives, members, false),
             TypeSystemDefinition::UnionTypeExtension(UnionTypeExtension {
                 name,
                 directives,
                 members,
+                ..
             }) => write_union_type_definition_helper(f, &name.value, directives, members, true),
             TypeSystemDefinition::DirectiveDefinition(DirectiveDefinition {
                 name,
@@ -111,6 +117,7 @@ impl fmt::Display for TypeSystemDefinition {
                 locations,
                 description,
                 hack_source,
+                ..
             }) => write_directive_definition_helper(
                 f,
                 &name.value,
@@ -236,6 +243,7 @@ pub struct ObjectTypeDefinition {
     pub interfaces: Vec<Identifier>,
     pub directives: Vec<ConstantDirective>,
     pub fields: Option<List<FieldDefinition>>,
+    pub span: Span,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -244,6 +252,7 @@ pub struct ObjectTypeExtension {
     pub interfaces: Vec<Identifier>,
     pub directives: Vec<ConstantDirective>,
     pub fields: Option<List<FieldDefinition>>,
+    pub span: Span,
 }
 impl From<ObjectTypeExtension> for ObjectTypeDefinition {
     fn from(ext: ObjectTypeExtension) -> Self {
@@ -252,6 +261,7 @@ impl From<ObjectTypeExtension> for ObjectTypeDefinition {
             interfaces: ext.interfaces,
             directives: ext.directives,
             fields: ext.fields,
+            span: ext.span,
         }
     }
 }
@@ -265,6 +275,7 @@ pub struct InterfaceTypeDefinition {
     pub interfaces: Vec<Identifier>,
     pub directives: Vec<ConstantDirective>,
     pub fields: Option<List<FieldDefinition>>,
+    pub span: Span,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -273,6 +284,7 @@ pub struct InterfaceTypeExtension {
     pub interfaces: Vec<Identifier>,
     pub directives: Vec<ConstantDirective>,
     pub fields: Option<List<FieldDefinition>>,
+    pub span: Span,
 }
 impl From<InterfaceTypeExtension> for InterfaceTypeDefinition {
     fn from(ext: InterfaceTypeExtension) -> Self {
@@ -281,6 +293,7 @@ impl From<InterfaceTypeExtension> for InterfaceTypeDefinition {
             interfaces: ext.interfaces,
             directives: ext.directives,
             fields: ext.fields,
+            span: ext.span,
         }
     }
 }
@@ -293,6 +306,7 @@ pub struct UnionTypeDefinition {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
     pub members: Vec<Identifier>,
+    pub span: Span,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -300,6 +314,7 @@ pub struct UnionTypeExtension {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
     pub members: Vec<Identifier>,
+    pub span: Span,
 }
 impl From<UnionTypeExtension> for UnionTypeDefinition {
     fn from(ext: UnionTypeExtension) -> Self {
@@ -307,6 +322,7 @@ impl From<UnionTypeExtension> for UnionTypeDefinition {
             name: ext.name,
             directives: ext.directives,
             members: ext.members,
+            span: ext.span,
         }
     }
 }
@@ -410,6 +426,7 @@ pub struct DirectiveDefinition {
     pub locations: Vec<DirectiveLocation>,
     pub description: Option<StringNode>,
     pub hack_source: Option<StringNode>,
+    pub span: Span,
 }
 
 #[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug, Clone, Copy)]
@@ -477,6 +494,7 @@ pub struct InputValueDefinition {
     pub type_: TypeAnnotation,
     pub default_value: Option<ConstantValue>,
     pub directives: Vec<ConstantDirective>,
+    pub span: Span,
 }
 
 impl fmt::Display for InputValueDefinition {

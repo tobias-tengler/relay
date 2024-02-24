@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::path::Path;
 use std::path::PathBuf;
 
 use common::SourceLocationKey;
@@ -15,6 +16,7 @@ use docblock_syntax::parse_docblock;
 use extract_graphql::JavaScriptSourceFeature;
 use graphql_syntax::parse_executable_with_error_recovery;
 use graphql_syntax::ExecutableDefinition;
+use graphql_syntax::SchemaDocument;
 use intern::string_key::StringKey;
 use log::debug;
 use lsp_types::Position;
@@ -110,16 +112,37 @@ pub fn extract_project_name_from_url(
     Ok(project_name.into())
 }
 
+fn get_file_contents(path: &Path) -> LSPRuntimeResult<String> {
+    let file = std::fs::read(&path).map_err(|e| LSPRuntimeError::UnexpectedError(e.to_string()))?;
+    String::from_utf8(file).map_err(|e| LSPRuntimeError::UnexpectedError(e.to_string()))
+}
+
 /// Return a parsed executable document, or parsed Docblock IR for this LSP
 /// request, only if the request occurs within a GraphQL document or Docblock.
 pub fn extract_feature_from_text(
     project_config: &ProjectConfig,
     source_feature_cache: &DashMap<Url, Vec<JavaScriptSourceFeature>>,
+    schema_cache: &DashMap<Url, SchemaDocument>,
     text_document_position: &TextDocumentPositionParams,
     index_offset: usize,
 ) -> LSPRuntimeResult<(Feature, Span)> {
     let uri = &text_document_position.text_document.uri;
     let position = text_document_position.position;
+
+    if let Some(schema_document) = schema_cache.get(uri) {
+        let owned_schema_document = schema_document.value().clone();
+        let file_path = uri
+            .to_file_path()
+            .map_err(|_| LSPRuntimeError::ExpectedError)?;
+        let text = get_file_contents(file_path.as_path())?;
+        let position_span = position_to_offset(&position, index_offset, 0, &text)
+            .map(|offset| Span::new(offset, offset))
+            .ok_or_else(|| {
+                LSPRuntimeError::UnexpectedError("Failed to map positions to spans".to_string())
+            })?;
+
+        return Ok((Feature::Schema(owned_schema_document), position_span));
+    }
 
     let source_features = source_feature_cache
         .get(uri)

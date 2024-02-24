@@ -26,6 +26,7 @@ use graphql_ir::RelayMode;
 use graphql_syntax::parse_executable_with_error_recovery;
 use graphql_syntax::ExecutableDefinition;
 use graphql_syntax::ExecutableDocument;
+use graphql_syntax::SchemaDocument;
 use intern::string_key::Intern;
 use intern::string_key::StringKey;
 use log::debug;
@@ -154,6 +155,7 @@ pub struct LSPState<
     schema_documentation_loader: Option<Box<dyn SchemaDocumentationLoader<TSchemaDocumentation>>>,
     pub(crate) source_programs: SourcePrograms,
     synced_javascript_features: DashMap<Url, Vec<JavaScriptSourceFeature>>,
+    synced_schemas: DashMap<Url, SchemaDocument>,
     pub(crate) perf_logger: Arc<TPerfLogger>,
     pub(crate) diagnostic_reporter: Arc<DiagnosticReporter>,
     pub(crate) notify_lsp_state_resources: Arc<Notify>,
@@ -199,6 +201,7 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
             schema_documentation_loader,
             source_programs: Arc::new(DashMap::with_hasher(FnvBuildHasher::default())),
             synced_javascript_features: Default::default(),
+            synced_schemas: Default::default(),
             js_resource,
         };
 
@@ -356,6 +359,14 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
         self.diagnostic_reporter
             .clear_quick_diagnostics_for_url(url);
     }
+
+    fn process_synced_schema(&self, uri: &Url, schema: SchemaDocument) {
+        self.synced_schemas.insert(uri.clone(), schema);
+    }
+
+    fn remove_synced_schemas(&self, url: &Url) {
+        self.synced_schemas.remove(url);
+    }
 }
 
 impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentation + 'static>
@@ -418,6 +429,7 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
                     .ok_or(LSPRuntimeError::ExpectedError)?,
                 ir: docblock_ir,
             }),
+            Feature::Schema(_) => Err(LSPRuntimeError::ExpectedError)?,
         };
         Ok(info)
     }
@@ -433,6 +445,7 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
         match feature {
             Feature::GraphQLDocument(document) => Ok((document, span)),
             Feature::DocblockIr(_) => Err(LSPRuntimeError::ExpectedError),
+            Feature::Schema(_) => Err(LSPRuntimeError::ExpectedError),
         }
     }
 
@@ -451,6 +464,7 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
         extract_feature_from_text(
             project_config,
             &self.synced_javascript_features,
+            &self.synced_schemas,
             position,
             index_offset,
         )
@@ -509,6 +523,11 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
             js_server.process_js_source(uri, text);
         }
 
+        let source_location = SourceLocationKey::standalone(uri.path());
+        if let Ok(schema_document) = graphql_syntax::parse_schema_document(text, source_location) {
+            self.process_synced_schema(uri, schema_document);
+        }
+
         // First we check to see if this document has any GraphQL documents.
         let embedded_sources = extract_graphql::extract(text);
 
@@ -536,6 +555,13 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
             js_server.process_js_source(uri, full_text);
         }
 
+        let source_location = SourceLocationKey::standalone(uri.path());
+        if let Ok(schema_document) =
+            graphql_syntax::parse_schema_document(full_text, source_location)
+        {
+            self.process_synced_schema(uri, schema_document);
+        }
+
         // First we check to see if this document has any GraphQL documents.
         let embedded_sources = extract_graphql::extract(full_text);
         if embedded_sources.is_empty() {
@@ -550,6 +576,7 @@ impl<TPerfLogger: PerfLogger + 'static, TSchemaDocumentation: SchemaDocumentatio
         if let Some(js_server) = self.get_js_language_sever() {
             js_server.remove_js_source(uri);
         }
+        self.remove_synced_schemas(uri);
         self.remove_synced_sources(uri);
         Ok(())
     }

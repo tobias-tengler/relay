@@ -8,6 +8,7 @@
 use common::SourceLocationKey;
 use common::Span;
 use graphql_syntax::parse_executable_with_features;
+use graphql_syntax::parse_schema_document;
 use graphql_syntax::FragmentArgumentSyntaxKind;
 use graphql_syntax::ParserFeatures;
 
@@ -23,6 +24,27 @@ pub(super) fn test_resolution(source: &str, sub_str: &str, cb: impl Fn(&Resoluti
         },
     )
     .unwrap();
+
+    let pos = source.find(sub_str).unwrap() as u32;
+
+    // Select the `uri` field
+    let position_span = Span {
+        start: pos,
+        end: pos,
+    };
+
+    let resolved = document.resolve((), position_span);
+
+    cb(&resolved);
+}
+
+pub(super) fn test_schema_resolution(
+    source: &str,
+    sub_str: &str,
+    cb: impl Fn(&ResolutionPath<'_>),
+) {
+    let document =
+        parse_schema_document(source, SourceLocationKey::standalone("/test/file")).unwrap();
 
     let pos = source.find(sub_str).unwrap() as u32;
 
@@ -379,6 +401,7 @@ fn fragment_argument_default_value() {
         assert_matches!(resolved, ResolutionPath::ConstantString(_));
     })
 }
+
 #[test]
 fn fragment_argument_directive() {
     let source = r#"
@@ -388,5 +411,115 @@ fn fragment_argument_directive() {
         "#;
     test_resolution(source, r#""1""#, |resolved| {
         assert_matches!(resolved, ResolutionPath::ConstantString(_));
+    })
+}
+
+// ## Directives
+
+#[test]
+fn directive_definition_name() {
+    let source = r#"
+        directive @foo on FIELD
+        "#;
+    test_schema_resolution(source, "foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::DirectiveDefinitionName(_),
+            })
+        );
+    })
+}
+
+// ## Union Types
+
+#[test]
+fn union_type_definition_name() {
+    let source = r#"
+        union Foo = Bar | Baz
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::UnionTypeDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn union_type_member_name() {
+    let source = r#"
+        union Foo = Bar | Baz
+        "#;
+    test_schema_resolution(source, "Bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::UnionTypeMemberName(_),
+            })
+        );
+    })
+}
+
+// ## Interface Types
+
+#[test]
+fn interface_type_definition_name() {
+    let source = r#"
+        interface Foo {
+            bar: String
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InterfaceTypeDefinitionName(_),
+            })
+        );
+    })
+}
+
+// ## Object Types
+
+#[test]
+fn object_type_definition_name() {
+    let source = r#"
+        type Foo {
+            bar: String
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ObjectTypeDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_implemented_interface_name() {
+    let source = r#"
+        type Foo implements Node {
+            bar: String
+        }
+        "#;
+    test_schema_resolution(source, "Node", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ImplementedInterfaceTypeName(_),
+            })
+        );
     })
 }
