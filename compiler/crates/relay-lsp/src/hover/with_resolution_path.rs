@@ -24,7 +24,8 @@ use lsp_types::HoverContents;
 use lsp_types::MarkedString;
 use resolution_path::ArgumentPath;
 use resolution_path::ArgumentRoot;
-use resolution_path::ConstantArgPath;
+use resolution_path::ConstantArgumentParent;
+use resolution_path::ConstantArgumentPath;
 use resolution_path::ConstantBooleanPath;
 use resolution_path::ConstantEnumPath;
 use resolution_path::ConstantFloatPath;
@@ -278,22 +279,22 @@ fn get_hover_behavior_from_resolution_path<'a>(path: &'a ResolutionPath<'a>) -> 
         ResolutionPath::Ident(IdentPath {
             inner: _,
             parent:
-                IdentParent::ConstantArgKey(ConstantArgPath {
+                IdentParent::ConstantArgumentKey(ConstantArgumentPath {
                     inner: _,
                     parent:
-                        ConstantObjPath {
+                        ConstantArgumentParent::ConstantObj(ConstantObjPath {
                             inner: _,
                             parent: constant_value_path,
-                        },
+                        }),
                 }),
         }) => HoverBehavior::ConstantValue(&constant_value_path.parent),
         ResolutionPath::ConstantObj(ConstantObjPath {
             inner: _,
             parent: constant_value_path,
         }) => HoverBehavior::ConstantValue(&constant_value_path.parent),
-        ResolutionPath::ConstantArg(ConstantArgPath {
+        ResolutionPath::ConstantArgument(ConstantArgumentPath {
             inner: _,
-            parent: constant_obj_path,
+            parent: ConstantArgumentParent::ConstantObj(constant_obj_path),
         }) => HoverBehavior::ConstantValue(&constant_obj_path.parent.parent),
 
         // Scalar and linked fields
@@ -579,6 +580,7 @@ fn on_hover_constant_value<'a>(
         ),
         // TODO: Fix
         ConstantValueRoot::InputValueDefinition(_) => None,
+        ConstantValueRoot::ConstantArgument(_) => None,
     }
 }
 

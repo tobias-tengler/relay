@@ -335,7 +335,7 @@ fn list_literal() {
                 inner: _,
                 parent: ConstantValuePath {
                     inner: _,
-                    parent: ConstantValueParent::ConstantArgValue(_),
+                    parent: ConstantValueParent::ConstantArgumentValue(_),
                 },
             })
         );
@@ -838,7 +838,7 @@ fn object_type_extension_implements_interface_name() {
 #[test]
 fn object_type_extension_field_name() {
     let source = r#"
-        extension type Foo {
+        extend type Foo {
             bar: Baz
         }
         "#;
@@ -1499,10 +1499,10 @@ fn input_value_definition_directive() {
 fn enum_value_definition_directive() {
     let source = r#"
        enum Foo {
-            BAZ @bar
+            BAR @baz
         }
         "#;
-    test_schema_resolution(source, "bar", |resolved| {
+    test_schema_resolution(source, "baz", |resolved| {
         assert_matches!(
             resolved,
             ResolutionPath::Ident(IdentPath {
@@ -1518,4 +1518,47 @@ fn enum_value_definition_directive() {
 
 // ## Constant Directive
 
-// - arguments
+#[test]
+fn constant_directive_argument_name() {
+    let source = r#"
+       enum Foo {
+            BAR @baz(qux: 5)
+        }
+        "#;
+    test_schema_resolution(source, "qux", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantArgumentKey(ConstantArgumentPath {
+                    inner: _,
+                    parent: ConstantArgumentParent::ConstantDirective(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn constant_directive_argument_value() {
+    let source = r#"
+       enum Foo {
+            BAR @baz(qux: 5)
+        }
+        "#;
+    test_schema_resolution(source, "5", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::ConstantInt(ConstantIntPath {
+                inner: _,
+                parent: ConstantValuePath {
+                    inner: _,
+                    parent: ConstantValueParent::ConstantArgumentValue(ConstantArgumentPath {
+                        inner: _,
+                        parent: ConstantArgumentParent::ConstantDirective(_),
+                    })
+                }
+            })
+        );
+    })
+}

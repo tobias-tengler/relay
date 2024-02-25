@@ -146,7 +146,7 @@ pub enum ResolutionPath<'a> {
     ConstantEnum(ConstantEnumPath<'a>),
     ConstantList(ConstantListPath<'a>),
     ConstantObj(ConstantObjPath<'a>),
-    ConstantArg(ConstantArgPath<'a>),
+    ConstantArgument(ConstantArgumentPath<'a>),
     ValueList(ValueListPath<'a>),
     VariableIdentifier(VariableIdentifierPath<'a>),
     ConstantObject(ConstantObjectPath<'a>),
@@ -584,7 +584,7 @@ pub enum IdentParent<'a> {
     ArgumentName(ArgumentPath<'a>),
     ArgumentValue(ArgumentPath<'a>),
     NamedTypeAnnotation(NamedTypeAnnotationPath<'a>),
-    ConstantArgKey(ConstantArgPath<'a>),
+    ConstantArgumentKey(ConstantArgumentPath<'a>),
 
     DirectiveDefinitionName(DirectiveDefinitionPath<'a>),
     UnionTypeDefinitionName(UnionTypeDefinitionPath<'a>),
@@ -941,7 +941,7 @@ pub enum ConstantValueParent<'a> {
     DefaultValue(DefaultValuePath<'a>),
     ConstantList(ConstantListPath<'a>),
     ConstantObj(Box<ConstantObjPath<'a>>),
-    ConstantArgValue(ConstantArgPath<'a>),
+    ConstantArgumentValue(ConstantArgumentPath<'a>),
 }
 impl<'a> ResolvePosition<'a> for ConstantValue {
     type Parent = ConstantValueParent<'a>;
@@ -1016,7 +1016,10 @@ impl<'a> ResolvePosition<'a> for List<ConstantArgument> {
     fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
         for arg in &self.items {
             if arg.contains(position) {
-                return arg.resolve(self.path(parent), position);
+                return arg.resolve(
+                    ConstantArgumentParent::ConstantObj(self.path(parent)),
+                    position,
+                );
             }
         }
         ResolutionPath::ConstantObj(self.path(parent))
@@ -1026,23 +1029,29 @@ impl<'a> ResolvePosition<'a> for List<ConstantArgument> {
     }
 }
 
-pub type ConstantArgPath<'a> = Path<&'a ConstantArgument, ConstantObjPath<'a>>;
+pub type ConstantArgumentPath<'a> = Path<&'a ConstantArgument, ConstantArgumentParent<'a>>;
+#[derive(Debug)]
+pub enum ConstantArgumentParent<'a> {
+    ConstantObj(ConstantObjPath<'a>),
+    ConstantDirective(ConstantDirectivePath<'a>),
+}
 
 impl<'a> ResolvePosition<'a> for ConstantArgument {
-    type Parent = ConstantObjPath<'a>;
+    type Parent = ConstantArgumentParent<'a>;
     fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
         if self.name.contains(position) {
-            return self
-                .name
-                .resolve(IdentParent::ConstantArgKey(self.path(parent)), position);
-        }
-        if self.value.contains(position) {
-            return self.value.resolve(
-                ConstantValueParent::ConstantArgValue(self.path(parent)),
+            return self.name.resolve(
+                IdentParent::ConstantArgumentKey(self.path(parent)),
                 position,
             );
         }
-        ResolutionPath::ConstantArg(self.path(parent))
+        if self.value.contains(position) {
+            return self.value.resolve(
+                ConstantValueParent::ConstantArgumentValue(self.path(parent)),
+                position,
+            );
+        }
+        ResolutionPath::ConstantArgument(self.path(parent))
     }
     fn contains(&'a self, position: Span) -> bool {
         self.span.contains(position)
@@ -2040,18 +2049,16 @@ impl<'a> ResolvePosition<'a> for ConstantDirective {
             );
         }
 
-        // TODO: Implement
-
-        // if let Some(arguments) = &self.arguments {
-        //     for argument in &arguments.items {
-        //         if argument.contains(position) {
-        //             return argument.resolve(
-        //                 ConstantArgumentParent::ConstantDirective(self.path(parent)),
-        //                 position,
-        //             );
-        //         }
-        //     }
-        // }
+        if let Some(arguments) = &self.arguments {
+            for argument in &arguments.items {
+                if argument.contains(position) {
+                    return argument.resolve(
+                        ConstantArgumentParent::ConstantDirective(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
 
         ResolutionPath::ConstantDirective(self.path(parent))
     }

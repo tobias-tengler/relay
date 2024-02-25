@@ -7,11 +7,14 @@
 
 use std::sync::Arc;
 
+use common::DirectiveName;
 use common::Span;
 use graphql_ir::FragmentDefinitionName;
 use graphql_syntax::ExecutableDocument;
 use graphql_syntax::SchemaDocument;
 use intern::string_key::StringKey;
+use resolution_path::ConstantArgumentParent;
+use resolution_path::ConstantArgumentPath;
 use resolution_path::ConstantEnumPath;
 use resolution_path::ConstantValuePath;
 use resolution_path::ConstantValueRoot;
@@ -24,6 +27,7 @@ use resolution_path::ScalarFieldPath;
 use resolution_path::SelectionParent;
 use resolution_path::TypeConditionPath;
 use schema::SDLSchema;
+use schema::Schema;
 
 use super::DefinitionDescription;
 use crate::lsp_runtime_error::LSPRuntimeError;
@@ -32,7 +36,7 @@ use crate::lsp_runtime_error::LSPRuntimeResult;
 pub fn get_schema_definition_description(
     document: &SchemaDocument,
     position_span: Span,
-    _schema: &Arc<SDLSchema>,
+    schema: &Arc<SDLSchema>,
 ) -> LSPRuntimeResult<DefinitionDescription> {
     let node_path = document.resolve((), position_span);
 
@@ -99,6 +103,32 @@ pub fn get_schema_definition_description(
                         enum_name,
                         enum_value: enum_value.value,
                     })
+                }
+                ConstantValueRoot::ConstantArgument(ConstantArgumentPath {
+                    inner: constant_argument,
+                    parent: ConstantArgumentParent::ConstantDirective(constant_directive_path),
+                }) => {
+                    let directive_argument_name = constant_argument.name.value;
+                    let directive_name = constant_directive_path.inner.name.value;
+
+                    schema
+                        .get_directive(DirectiveName(directive_name))
+                        .and_then(|directive| {
+                            directive
+                                .arguments
+                                .iter()
+                                .find(|arg| arg.name.0 == directive_argument_name)
+                        })
+                        .and_then(|arg| arg.type_.inner().get_enum_id())
+                        .and_then(|enum_id| {
+                            let enum_name = schema.enum_(enum_id).name.item.0;
+
+                            Some(DefinitionDescription::EnumValue {
+                                enum_name,
+                                enum_value: enum_value.value,
+                            })
+                        })
+                        .ok_or(LSPRuntimeError::ExpectedError)
                 }
                 _ => Err(LSPRuntimeError::ExpectedError),
             }

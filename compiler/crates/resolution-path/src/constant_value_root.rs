@@ -10,6 +10,15 @@ use super::*;
 impl<'a> ConstantValueParent<'a> {
     pub fn find_constant_value_root(&'a self) -> ConstantValueRoot<'a> {
         match self {
+            ConstantValueParent::ConstantArgumentValue(ConstantArgumentPath {
+                inner: _,
+                parent:
+                    ConstantArgumentParent::ConstantDirective(ConstantDirectivePath {
+                        inner: _,
+                        parent: _,
+                    }),
+                // TODO: This is likely wrong
+            }) => todo!("fix"),
             ConstantValueParent::DefaultValue(DefaultValuePath {
                 inner: _,
                 parent: DefaultValueParent::InputValueDefinition(input_value_definition_path),
@@ -29,13 +38,13 @@ impl<'a> ConstantValueParent<'a> {
             ConstantValueParent::ConstantObj(constant_obj) => {
                 constant_obj.parent.parent.find_constant_value_root()
             }
-            ConstantValueParent::ConstantArgValue(ConstantArgPath {
+            ConstantValueParent::ConstantArgumentValue(ConstantArgumentPath {
                 inner: _,
                 parent:
-                    ConstantObjPath {
+                    ConstantArgumentParent::ConstantObj(ConstantObjPath {
                         inner: _,
                         parent: constant_value_path,
-                    },
+                    }),
             }) => constant_value_path.parent.find_constant_value_root(),
         }
     }
@@ -70,6 +79,7 @@ impl<'a> ValueParent<'a> {
 pub enum ConstantValueRoot<'a> {
     VariableDefinition(&'a VariableDefinitionPath<'a>),
     InputValueDefinition(&'a InputValueDefinitionPath<'a>),
+    ConstantArgument(&'a ConstantArgumentPath<'a>),
     Argument(&'a ArgumentPath<'a>),
 }
 
