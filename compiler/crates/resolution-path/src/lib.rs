@@ -567,13 +567,15 @@ pub enum IdentParent<'a> {
 
     DirectiveDefinitionName(DirectiveDefinitionPath<'a>),
     UnionTypeDefinitionName(UnionTypeDefinitionPath<'a>),
-    UnionTypeDefinitionMemberName(UnionTypeDefinitionPath<'a>),
     UnionTypeExtensionName(UnionTypeExtensionPath<'a>),
+    // TODO: Can we merge these two?
+    UnionTypeDefinitionMemberName(UnionTypeDefinitionPath<'a>),
     UnionTypeExtensionMemberName(UnionTypeExtensionPath<'a>),
     InterfaceTypeDefinitionName(InterfaceTypeDefinitionPath<'a>),
     InterfaceTypeExtensionName(InterfaceTypeExtensionPath<'a>),
-    // TODO: Better name?
-    ImplementedInterfaceTypeName(ObjectTypeDefinitionPath<'a>),
+    // TODO: Can we merge these two?
+    ObjectTypeDefinitionImplementedInterfaceName(ObjectTypeDefinitionPath<'a>),
+    ObjectTypeExtensionImplementedInterfaceName(ObjectTypeExtensionPath<'a>),
     ObjectTypeDefinitionName(ObjectTypeDefinitionPath<'a>),
     ObjectTypeExtensionName(ObjectTypeExtensionPath<'a>),
     InputObjectTypeDefinitionName(InputObjectTypeDefinitionPath<'a>),
@@ -1355,7 +1357,7 @@ impl<'a> ResolvePosition<'a> for ObjectTypeDefinition {
         for interface in &self.interfaces {
             if interface.contains(position) {
                 return interface.resolve(
-                    IdentParent::ImplementedInterfaceTypeName(self.path(parent)),
+                    IdentParent::ObjectTypeDefinitionImplementedInterfaceName(self.path(parent)),
                     position,
                 );
             }
@@ -1394,14 +1396,14 @@ impl<'a> ResolvePosition<'a> for ObjectTypeExtension {
             );
         }
 
-        // for interface in &self.interfaces {
-        //     if interface.contains(position) {
-        //         return interface.resolve(
-        //             IdentParent::ImplementedInterfaceTypeName(self.path(parent)),
-        //             position,
-        //         );
-        //     }
-        // }
+        for interface in &self.interfaces {
+            if interface.contains(position) {
+                return interface.resolve(
+                    IdentParent::ObjectTypeExtensionImplementedInterfaceName(self.path(parent)),
+                    position,
+                );
+            }
+        }
 
         if let Some(field_list) = &self.fields {
             for field in &field_list.items {

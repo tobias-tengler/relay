@@ -518,6 +518,68 @@ fn interface_type_definition_name() {
     })
 }
 
+#[test]
+fn interface_type_definition_field() {
+    let source = r#"
+        interface Foo {
+            bar: String
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::FieldDefinitionName(FieldDefinitionPath {
+                    inner: _,
+                    parent: FieldDefinitionParent::InterfaceTypeDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+// ## Interface Type Extensions
+
+#[test]
+fn interface_type_extension_name() {
+    let source = r#"
+        extend interface Foo {
+            bar: String
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InterfaceTypeExtensionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn interface_type_extension_field() {
+    let source = r#"
+        extend interface Foo {
+            bar: String
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::FieldDefinitionName(FieldDefinitionPath {
+                    inner: _,
+                    parent: FieldDefinitionParent::InterfaceTypeExtension(_),
+                }),
+            })
+        );
+    })
+}
+
 // ## Object Types
 
 #[test]
@@ -539,7 +601,7 @@ fn object_type_definition_name() {
 }
 
 #[test]
-fn object_type_implemented_interface_name() {
+fn object_type_definition_implemented_interface_name() {
     let source = r#"
         type Foo implements Node {
             bar: Baz
@@ -550,7 +612,165 @@ fn object_type_implemented_interface_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::ImplementedInterfaceTypeName(_),
+                parent: IdentParent::ObjectTypeDefinitionImplementedInterfaceName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_definition_field_name() {
+    let source = r#"
+        type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::FieldDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_definition_field_named_type() {
+    let source = r#"
+        type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_definition_field_non_null_type() {
+    let source = r#"
+        type Foo {
+            bar: Baz!
+        }
+        "#;
+    test_schema_resolution(source, "Baz!", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
+                    }
+                }),
+            })
+        );
+    })
+}
+
+// ## Object Type Extensions
+
+#[test]
+fn object_type_extension_name() {
+    let source = r#"
+        extend type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ObjectTypeExtensionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_extension_implemented_interface_name() {
+    let source = r#"
+        extend type Foo implements Node {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Node", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ObjectTypeExtensionImplementedInterfaceName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_extension_field_name() {
+    let source = r#"
+        extend type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::FieldDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_extension_field_named_type() {
+    let source = r#"
+        extend type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_extension_field_non_null_type() {
+    let source = r#"
+        extend type Foo {
+            bar: Baz!
+        }
+        "#;
+    test_schema_resolution(source, "Baz!", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
+                    }
+                }),
             })
         );
     })
@@ -577,7 +797,7 @@ fn input_object_type_definition_name() {
 }
 
 #[test]
-fn input_object_type_field_definition_name() {
+fn input_object_type_definition_field_name() {
     let source = r#"
         input Foo {
             bar: Baz
@@ -595,7 +815,7 @@ fn input_object_type_field_definition_name() {
 }
 
 #[test]
-fn input_object_type_field_definition_named_type() {
+fn input_object_type_definition_field_named_type() {
     let source = r#"
         input Foo {
             bar: Baz
@@ -613,7 +833,7 @@ fn input_object_type_field_definition_named_type() {
 }
 
 #[test]
-fn input_object_type_field_definition_non_null_type() {
+fn input_object_type_definition_field_non_null_type() {
     let source = r#"
         input Foo {
             bar: Baz!
@@ -636,12 +856,30 @@ fn input_object_type_field_definition_non_null_type() {
     })
 }
 
-// ## Field Definitions
+// ## Input Object Type Extensions
 
 #[test]
-fn field_definition_name() {
+fn input_object_type_extension_name() {
     let source = r#"
-        type Foo {
+        extend input Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InputObjectTypeExtensionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_object_type_extension_field_name() {
+    let source = r#"
+        extend input Foo {
             bar: Baz
         }
         "#;
@@ -650,16 +888,16 @@ fn field_definition_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::FieldDefinitionName(_),
+                parent: IdentParent::InputValueDefinitionName(_),
             })
         );
     })
 }
 
 #[test]
-fn field_definition_named_type() {
+fn input_object_type_extension_field_named_type() {
     let source = r#"
-        type Foo {
+        extend input Foo {
             bar: Baz
         }
         "#;
@@ -675,9 +913,9 @@ fn field_definition_named_type() {
 }
 
 #[test]
-fn field_definition_non_null_type() {
+fn input_object_type_extension_field_non_null_type() {
     let source = r#"
-        type Foo {
+        extend input Foo {
             bar: Baz!
         }
         "#;
@@ -759,3 +997,49 @@ fn input_value_definition_non_null_type() {
         );
     })
 }
+
+// ## Enum Types
+
+#[test]
+fn enum_definition_name() {
+    let source = r#"
+        enum Foo {
+            BAR
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::EnumTypeDefinitionName(_),
+            })
+        );
+    })
+}
+
+// TODO: Enum values
+
+// ## Enum Type Extensions
+
+#[test]
+fn enum_extension_name() {
+    let source = r#"
+        extend enum Foo {
+            BAR
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::EnumTypeExtensionName(_),
+            })
+        );
+    })
+}
+
+// TODO: Enum values
