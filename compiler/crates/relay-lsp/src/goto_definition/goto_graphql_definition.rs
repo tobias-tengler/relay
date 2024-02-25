@@ -12,6 +12,7 @@ use graphql_ir::FragmentDefinitionName;
 use graphql_syntax::ExecutableDocument;
 use graphql_syntax::SchemaDocument;
 use intern::string_key::StringKey;
+use log::info;
 use resolution_path::IdentParent;
 use resolution_path::IdentPath;
 use resolution_path::LinkedFieldPath;
@@ -46,7 +47,9 @@ pub fn get_schema_definition_description(
             inner: implemented_interface_name,
             parent:
                 IdentParent::ObjectTypeDefinitionImplementedInterfaceName(_)
-                | IdentParent::ObjectTypeExtensionImplementedInterfaceName(_),
+                | IdentParent::ObjectTypeExtensionImplementedInterfaceName(_)
+                | IdentParent::InterfaceTypeDefinitionImplementedInterfaceName(_)
+                | IdentParent::InterfaceTypeExtensionImplementedInterfaceName(_),
         }) => Ok(DefinitionDescription::Type {
             type_name: implemented_interface_name.value,
         }),
@@ -74,6 +77,12 @@ pub fn get_schema_definition_description(
         }) => Ok(DefinitionDescription::Type {
             type_name: type_extension_name.value,
         }),
+        ResolutionPath::Ident(IdentPath {
+            inner: directive_name,
+            parent: IdentParent::ConstantDirectiveName(_),
+        }) => Ok(DefinitionDescription::Directive {
+            directive_name: directive_name.value,
+        }),
         _ => Err(LSPRuntimeError::ExpectedError),
     }
 }
@@ -84,6 +93,8 @@ pub fn get_graphql_definition_description(
     schema: &Arc<SDLSchema>,
 ) -> LSPRuntimeResult<DefinitionDescription> {
     let node_path = document.resolve((), position_span);
+
+    info!("node_path: {:?}", node_path);
     match node_path {
         ResolutionPath::Ident(IdentPath {
             inner: fragment_name,
@@ -107,6 +118,12 @@ pub fn get_graphql_definition_description(
                     parent: selection_path,
                 }),
         }) => resolve_field(field_name.value, selection_path.parent, schema),
+        ResolutionPath::Ident(IdentPath {
+            inner: directive_name,
+            parent: IdentParent::DirectiveName(_),
+        }) => Ok(DefinitionDescription::Directive {
+            directive_name: directive_name.value,
+        }),
         ResolutionPath::Ident(IdentPath {
             inner: _,
             parent:

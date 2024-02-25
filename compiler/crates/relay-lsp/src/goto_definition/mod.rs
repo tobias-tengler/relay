@@ -12,6 +12,7 @@ mod goto_graphql_definition;
 use std::str;
 use std::sync::Arc;
 
+use common::DirectiveName;
 use graphql_ir::FragmentDefinitionName;
 use intern::string_key::Intern;
 use intern::string_key::StringKey;
@@ -50,6 +51,9 @@ pub enum DefinitionDescription {
     Type {
         type_name: StringKey,
     },
+    Directive {
+        directive_name: StringKey,
+    },
 }
 
 /// Resolve a GotoDefinitionRequest to a GotoDefinitionResponse
@@ -71,7 +75,7 @@ pub fn on_goto_definition(
 
     let definition_description = match feature {
         crate::Feature::GraphQLDocument(document) => {
-            info!("executable_document: {:?}", document);
+            // info!("executable_document: {:?}", document);
             get_graphql_definition_description(document, position_span, &schema)?
         }
         crate::Feature::DocblockIr(docblock_ir) => {
@@ -107,6 +111,9 @@ pub fn on_goto_definition(
             &schema,
             &root_dir,
         )?,
+        DefinitionDescription::Directive { directive_name } => {
+            locate_directive_definition(directive_name, &schema, &root_dir)?
+        }
     };
 
     // For some lsp-clients, such as clients relying on org.eclipse.lsp4j,
@@ -134,6 +141,22 @@ fn locate_fragment_definition(
     Ok(GotoDefinitionResponse::Scalar(
         transform_relay_location_to_lsp_location(root_dir, fragment.name.location)?,
     ))
+}
+
+fn locate_directive_definition(
+    directive_name: StringKey,
+    schema: &Arc<SDLSchema>,
+    root_dir: &std::path::Path,
+) -> Result<GotoDefinitionResponse, LSPRuntimeError> {
+    let directive = schema.get_directive(DirectiveName(directive_name));
+
+    directive
+        .map(|directive| directive.name.location)
+        .map(|schema_location| {
+            transform_relay_location_to_lsp_location(root_dir, schema_location)
+                .map(GotoDefinitionResponse::Scalar)
+        })
+        .ok_or(LSPRuntimeError::ExpectedError)?
 }
 
 fn locate_type_definition(

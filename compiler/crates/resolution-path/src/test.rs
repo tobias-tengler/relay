@@ -518,7 +518,23 @@ fn interface_type_definition_name() {
     })
 }
 
-// TODO: interface implementing interface
+#[test]
+fn interface_type_definition_implements_interface() {
+    let source = r#"
+        interface Foo implements Bar {
+            baz: String
+        }
+        "#;
+    test_schema_resolution(source, "Bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InterfaceTypeDefinitionImplementedInterfaceName(_),
+            })
+        );
+    })
+}
 
 #[test]
 fn interface_type_definition_field() {
@@ -561,7 +577,23 @@ fn interface_type_extension_name() {
     })
 }
 
-// TODO: interface implementing interface
+#[test]
+fn interface_type_extension_implements_interface() {
+    let source = r#"
+        extend interface Foo implements Bar {
+            baz: String
+        }
+        "#;
+    test_schema_resolution(source, "Bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InterfaceTypeExtensionImplementedInterfaceName(_),
+            })
+        );
+    })
+}
 
 #[test]
 fn interface_type_extension_field() {
