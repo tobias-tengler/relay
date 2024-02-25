@@ -518,6 +518,8 @@ fn interface_type_definition_name() {
     })
 }
 
+// TODO: interface implementing interface
+
 #[test]
 fn interface_type_definition_field() {
     let source = r#"
@@ -558,6 +560,8 @@ fn interface_type_extension_name() {
         );
     })
 }
+
+// TODO: interface implementing interface
 
 #[test]
 fn interface_type_extension_field() {
@@ -1019,7 +1023,65 @@ fn enum_definition_name() {
     })
 }
 
-// TODO: Enum values
+#[test]
+fn enum_definition_directive() {
+    let source = r#"
+        enum Foo @bar {
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::EnumTypeDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn enum_definition_value() {
+    let source = r#"
+        enum Foo {
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "BAZ", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::EnumValueDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn enum_definition_value_directive() {
+    let source = r#"
+       enum Foo {
+            BAZ @bar
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::EnumValueDefinition(_),
+                }),
+            })
+        );
+    })
+}
 
 // ## Enum Type Extensions
 
@@ -1042,7 +1104,65 @@ fn enum_extension_name() {
     })
 }
 
-// TODO: Enum values
+#[test]
+fn enum_extension_directive() {
+    let source = r#"
+        extend enum Foo @bar {
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::EnumTypeExtension(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn enum_extension_value() {
+    let source = r#"
+        extend enum Foo {
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "BAZ", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::EnumValueDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn enum_extension_value_directive() {
+    let source = r#"
+        extend enum Foo {
+            BAZ @bar
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::EnumValueDefinition(_),
+                }),
+            })
+        );
+    })
+}
 
 // ## Scalar Types
 
@@ -1062,6 +1182,25 @@ fn scalar_definition_name() {
     })
 }
 
+#[test]
+fn scalar_definition_directive() {
+    let source = r#"
+        scalar Foo @bar
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::ScalarTypeDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
 // ## Scalar Type Extensions
 
 #[test]
@@ -1075,6 +1214,25 @@ fn scalar_extension_name() {
             ResolutionPath::Ident(IdentPath {
                 inner: _,
                 parent: IdentParent::ScalarTypeExtensionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn scalar_extension_directive() {
+    let source = r#"
+        extend scalar Foo @bar
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::ScalarTypeExtension(_),
+                }),
             })
         );
     })
@@ -1103,6 +1261,27 @@ fn schema_definition_operation_type_type_name() {
     })
 }
 
+#[test]
+fn schema_definition_directive() {
+    let source = r#"
+        schema @foo {
+            query: Bar
+        }
+        "#;
+    test_schema_resolution(source, "foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::SchemaDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
 // ## Schema Extension
 
 #[test]
@@ -1125,3 +1304,30 @@ fn schema_extension_operation_type_type_name() {
         );
     })
 }
+
+#[test]
+fn schema_extension_directive() {
+    let source = r#"
+        extend schema @foo {
+            query: Bar
+        }
+        "#;
+    test_schema_resolution(source, "foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::SchemaExtension(_),
+                }),
+            })
+        );
+    })
+}
+
+// TODOS:
+// - directives for all
+// - default input value
+// - interface implementing interface
+// - constant directive arguments

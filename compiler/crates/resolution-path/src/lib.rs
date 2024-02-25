@@ -10,6 +10,7 @@ use common::Span;
 use graphql_syntax::Argument;
 use graphql_syntax::BooleanNode;
 use graphql_syntax::ConstantArgument;
+use graphql_syntax::ConstantDirective;
 use graphql_syntax::ConstantValue;
 use graphql_syntax::DefaultValue;
 use graphql_syntax::Directive;
@@ -17,6 +18,7 @@ use graphql_syntax::DirectiveDefinition;
 use graphql_syntax::EnumNode;
 use graphql_syntax::EnumTypeDefinition;
 use graphql_syntax::EnumTypeExtension;
+use graphql_syntax::EnumValueDefinition;
 use graphql_syntax::ExecutableDefinition;
 use graphql_syntax::ExecutableDocument;
 use graphql_syntax::FieldDefinition;
@@ -170,9 +172,11 @@ pub enum ResolutionPath<'a> {
     InputObjectTypeExtension(InputObjectTypeExtensionPath<'a>),
     EnumTypeDefinition(EnumTypeDefinitionPath<'a>),
     EnumTypeExtension(EnumTypeExtensionPath<'a>),
+    EnumValueDefinition(EnumValueDefinitionPath<'a>),
     ScalarTypeDefinition(ScalarTypeDefinitionPath<'a>),
     ScalarTypeExtension(ScalarTypeExtensionPath<'a>),
     FieldDefinition(FieldDefinitionPath<'a>),
+    ConstantDirective(ConstantDirectivePath<'a>),
 }
 #[derive(Debug)]
 pub struct Path<Inner, Parent> {
@@ -583,7 +587,9 @@ pub enum IdentParent<'a> {
     UnionTypeExtensionMemberName(UnionTypeExtensionPath<'a>),
     InterfaceTypeDefinitionName(InterfaceTypeDefinitionPath<'a>),
     InterfaceTypeExtensionName(InterfaceTypeExtensionPath<'a>),
-    // TODO: Can we merge these two?
+    // TODO: Can we merge these?
+    InterfaceTypeDefinitionImplementedInterfaceName(InterfaceTypeDefinitionPath<'a>),
+    InterfaceTypeExtensionImplementedInterfaceName(InterfaceTypeExtensionPath<'a>),
     ObjectTypeDefinitionImplementedInterfaceName(ObjectTypeDefinitionPath<'a>),
     ObjectTypeExtensionImplementedInterfaceName(ObjectTypeExtensionPath<'a>),
     ObjectTypeDefinitionName(ObjectTypeDefinitionPath<'a>),
@@ -592,11 +598,13 @@ pub enum IdentParent<'a> {
     InputObjectTypeExtensionName(InputObjectTypeExtensionPath<'a>),
     EnumTypeDefinitionName(EnumTypeDefinitionPath<'a>),
     EnumTypeExtensionName(EnumTypeExtensionPath<'a>),
+    EnumValueDefinitionName(EnumValueDefinitionPath<'a>),
     ScalarTypeDefinitionName(ScalarTypeDefinitionPath<'a>),
     ScalarTypeExtensionName(ScalarTypeExtensionPath<'a>),
     FieldDefinitionName(FieldDefinitionPath<'a>),
     InputValueDefinitionName(InputValueDefinitionPath<'a>),
     OperationTypeDefinitionType(OperationTypeDefinitionPath<'a>),
+    ConstantDirectiveName(ConstantDirectivePath<'a>),
 }
 
 impl<'a> ResolvePosition<'a> for Identifier {
@@ -1226,8 +1234,6 @@ impl<'a> ResolvePosition<'a> for DirectiveDefinition {
             }
         }
 
-        // TODO: Implement
-
         ResolutionPath::DirectiveDefinition(self.path(parent))
     }
 
@@ -1254,6 +1260,15 @@ impl<'a> ResolvePosition<'a> for UnionTypeDefinition {
             if member.contains(position) {
                 return member.resolve(
                     IdentParent::UnionTypeDefinitionMemberName(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::UnionTypeDefinition(self.path(parent)),
                     position,
                 );
             }
@@ -1290,6 +1305,15 @@ impl<'a> ResolvePosition<'a> for UnionTypeExtension {
             }
         }
 
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::UnionTypeExtension(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
         ResolutionPath::UnionTypeExtension(self.path(parent))
     }
 
@@ -1311,6 +1335,24 @@ impl<'a> ResolvePosition<'a> for InterfaceTypeDefinition {
                 IdentParent::InterfaceTypeDefinitionName(self.path(parent)),
                 position,
             );
+        }
+
+        for interface in &self.interfaces {
+            if interface.contains(position) {
+                return interface.resolve(
+                    IdentParent::InterfaceTypeDefinitionImplementedInterfaceName(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::InterfaceTypeDefinition(self.path(parent)),
+                    position,
+                );
+            }
         }
 
         if let Some(field_list) = &self.fields {
@@ -1345,6 +1387,24 @@ impl<'a> ResolvePosition<'a> for InterfaceTypeExtension {
                 IdentParent::InterfaceTypeExtensionName(self.path(parent)),
                 position,
             );
+        }
+
+        for interface in &self.interfaces {
+            if interface.contains(position) {
+                return interface.resolve(
+                    IdentParent::InterfaceTypeExtensionImplementedInterfaceName(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::InterfaceTypeExtension(self.path(parent)),
+                    position,
+                );
+            }
         }
 
         if let Some(field_list) = &self.fields {
@@ -1390,6 +1450,15 @@ impl<'a> ResolvePosition<'a> for ObjectTypeDefinition {
             }
         }
 
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::ObjectTypeDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
         if let Some(field_list) = &self.fields {
             for field in &field_list.items {
                 if field.contains(position) {
@@ -1427,6 +1496,15 @@ impl<'a> ResolvePosition<'a> for ObjectTypeExtension {
             if interface.contains(position) {
                 return interface.resolve(
                     IdentParent::ObjectTypeExtensionImplementedInterfaceName(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::ObjectTypeExtension(self.path(parent)),
                     position,
                 );
             }
@@ -1489,6 +1567,15 @@ impl<'a> ResolvePosition<'a> for FieldDefinition {
             );
         }
 
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::FieldDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
         ResolutionPath::FieldDefinition(self.path(parent))
     }
 
@@ -1510,6 +1597,15 @@ impl<'a> ResolvePosition<'a> for InputObjectTypeDefinition {
                 IdentParent::InputObjectTypeDefinitionName(self.path(parent)),
                 position,
             );
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::InputObjectTypeDefinition(self.path(parent)),
+                    position,
+                );
+            }
         }
 
         if let Some(field_list) = &self.fields {
@@ -1544,6 +1640,15 @@ impl<'a> ResolvePosition<'a> for InputObjectTypeExtension {
                 IdentParent::InputObjectTypeExtensionName(self.path(parent)),
                 position,
             );
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::InputObjectTypeExtension(self.path(parent)),
+                    position,
+                );
+            }
         }
 
         if let Some(field_list) = &self.fields {
@@ -1593,6 +1698,28 @@ impl<'a> ResolvePosition<'a> for InputValueDefinition {
             );
         }
 
+        // TODO: Default value
+
+        // if let Some(default_value) = &self.default_value {
+        //     if default_value.contains(position) {
+        //         return default_value.resolve(
+        //             ConstantValueParent::DefaultValue(DefaultValueParent::InputValueDefinition(
+        //                 self.path(parent),
+        //             )),
+        //             position,
+        //         );
+        //     }
+        // }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::InputValueDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
         ResolutionPath::InputValueDefinition(self.path(parent))
     }
 
@@ -1613,6 +1740,26 @@ impl<'a> ResolvePosition<'a> for EnumTypeDefinition {
                 IdentParent::EnumTypeDefinitionName(self.path(parent)),
                 position,
             );
+        }
+
+        if let Some(values) = &self.values {
+            for value in &values.items {
+                if value.contains(position) {
+                    return value.resolve(
+                        EnumValueDefinitionParent::EnumTypeDefinition(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::EnumTypeDefinition(self.path(parent)),
+                    position,
+                );
+            }
         }
 
         ResolutionPath::EnumTypeDefinition(self.path(parent))
@@ -1637,7 +1784,62 @@ impl<'a> ResolvePosition<'a> for EnumTypeExtension {
             );
         }
 
+        if let Some(values) = &self.values {
+            for value in &values.items {
+                if value.contains(position) {
+                    return value.resolve(
+                        EnumValueDefinitionParent::EnumTypeExtension(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::EnumTypeExtension(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
         ResolutionPath::EnumTypeExtension(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type EnumValueDefinitionPath<'a> = Path<&'a EnumValueDefinition, EnumValueDefinitionParent<'a>>;
+#[derive(Debug)]
+pub enum EnumValueDefinitionParent<'a> {
+    EnumTypeDefinition(EnumTypeDefinitionPath<'a>),
+    EnumTypeExtension(EnumTypeExtensionPath<'a>),
+}
+
+impl<'a> ResolvePosition<'a> for EnumValueDefinition {
+    type Parent = EnumValueDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::EnumValueDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::EnumValueDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        ResolutionPath::EnumValueDefinition(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {
@@ -1656,6 +1858,15 @@ impl<'a> ResolvePosition<'a> for SchemaDefinition {
             if operation_type.contains(position) {
                 return operation_type.resolve(
                     OperationTypeDefinitionParent::SchemaDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::SchemaDefinition(self.path(parent)),
                     position,
                 );
             }
@@ -1684,6 +1895,15 @@ impl<'a> ResolvePosition<'a> for SchemaExtension {
                         position,
                     );
                 }
+            }
+        }
+
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::SchemaExtension(self.path(parent)),
+                    position,
+                );
             }
         }
 
@@ -1737,6 +1957,15 @@ impl<'a> ResolvePosition<'a> for ScalarTypeDefinition {
             );
         }
 
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::ScalarTypeDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
         ResolutionPath::ScalarTypeDefinition(self.path(parent))
     }
 
@@ -1759,7 +1988,69 @@ impl<'a> ResolvePosition<'a> for ScalarTypeExtension {
             );
         }
 
+        for directive in self.directives.iter() {
+            if directive.contains(position) {
+                return directive.resolve(
+                    ConstantDirectiveParent::ScalarTypeExtension(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
         ResolutionPath::ScalarTypeExtension(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type ConstantDirectivePath<'a> = Path<&'a ConstantDirective, ConstantDirectiveParent<'a>>;
+#[derive(Debug)]
+pub enum ConstantDirectiveParent<'a> {
+    UnionTypeDefinition(UnionTypeDefinitionPath<'a>),
+    UnionTypeExtension(UnionTypeExtensionPath<'a>),
+    InterfaceTypeDefinition(InterfaceTypeDefinitionPath<'a>),
+    InterfaceTypeExtension(InterfaceTypeExtensionPath<'a>),
+    ObjectTypeDefinition(ObjectTypeDefinitionPath<'a>),
+    ObjectTypeExtension(ObjectTypeExtensionPath<'a>),
+    InputObjectTypeDefinition(InputObjectTypeDefinitionPath<'a>),
+    InputObjectTypeExtension(InputObjectTypeExtensionPath<'a>),
+    EnumTypeDefinition(EnumTypeDefinitionPath<'a>),
+    EnumTypeExtension(EnumTypeExtensionPath<'a>),
+    EnumValueDefinition(EnumValueDefinitionPath<'a>),
+    ScalarTypeDefinition(ScalarTypeDefinitionPath<'a>),
+    ScalarTypeExtension(ScalarTypeExtensionPath<'a>),
+    SchemaDefinition(SchemaDefinitionPath<'a>),
+    SchemaExtension(SchemaExtensionPath<'a>),
+    FieldDefinition(FieldDefinitionPath<'a>),
+    InputValueDefinition(InputValueDefinitionPath<'a>),
+}
+
+impl<'a> ResolvePosition<'a> for ConstantDirective {
+    type Parent = ConstantDirectiveParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        // Note: We don't currently handle the `@` explicitly.
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::ConstantDirectiveName(self.path(parent)),
+                position,
+            );
+        }
+
+        // if let Some(arguments) = &self.arguments {
+        //     for argument in &arguments.items {
+        //         if argument.contains(position) {
+        //             return argument.resolve(
+        //                 ConstantArgumentParent::ConstantDirective(self.path(parent)),
+        //                 position,
+        //             );
+        //         }
+        //     }
+        // }
+
+        ResolutionPath::ConstantDirective(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {

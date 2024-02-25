@@ -431,6 +431,7 @@ impl ExtensionIntoDefinition for InputObjectTypeExtension {
 pub struct EnumValueDefinition {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
+    pub span: Span,
 }
 
 impl fmt::Display for EnumValueDefinition {

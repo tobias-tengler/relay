@@ -701,10 +701,17 @@ impl<'a> Parser<'a> {
      * EnumValue : Name
      */
     fn parse_enum_value_definition(&mut self) -> ParseResult<EnumValueDefinition> {
+        let start = self.index();
         self.parse_optional_description();
         let name = self.parse_identifier()?;
         let directives = self.parse_constant_directives()?;
-        Ok(EnumValueDefinition { name, directives })
+        let end = self.index();
+        let span = Span::new(start, end);
+        Ok(EnumValueDefinition {
+            name,
+            directives,
+            span,
+        })
     }
 
     /**
