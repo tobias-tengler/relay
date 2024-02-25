@@ -97,6 +97,7 @@ pub fn extract_project_name_from_url(
     let project_set = match category {
         FileGroup::Source { project_set } => Ok(project_set),
         FileGroup::Schema { project_set } => Ok(project_set),
+        FileGroup::Extension { project_set } => Ok(project_set),
         _ => Err(LSPRuntimeError::UnexpectedError(format!(
             "File path {:?} is not a source set",
             file_path

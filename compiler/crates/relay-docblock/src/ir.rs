@@ -723,6 +723,8 @@ trait ResolverTypeDefinitionIr: ResolverIr {
             directives: self.directives(object, project_config),
             description: self.description(),
             hack_source: self.hack_source(),
+            // TODO: Fix
+            span: Span::empty(),
         }])
     }
 
@@ -1211,6 +1213,8 @@ impl ResolverIr for StrongObjectIr {
                 directives: vec![],
                 description: None,
                 hack_source: None,
+                // TODO: Fix
+                span: Span::empty(),
             },
             generate_model_instance_field(
                 project_config,
@@ -1583,6 +1587,8 @@ fn generate_model_instance_field(
         directives,
         description,
         hack_source,
+        // TODO: Fix
+        span: Span::empty(),
     }
 }
 

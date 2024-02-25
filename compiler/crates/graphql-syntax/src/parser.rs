@@ -633,14 +633,18 @@ impl<'a> Parser<'a> {
      *   - Description? enum Name Directives? EnumValuesDefinition?
      */
     fn parse_enum_type_definition(&mut self) -> ParseResult<EnumTypeDefinition> {
+        let start = self.index();
         self.parse_keyword("enum")?;
         let name = self.parse_identifier()?;
         let directives = self.parse_constant_directives()?;
         let values = self.parse_enum_values_definition()?;
+        let end = self.index();
+        let span = Span::new(start, end);
         Ok(EnumTypeDefinition {
             name,
             directives,
             values,
+            span,
         })
     }
 
@@ -651,13 +655,17 @@ impl<'a> Parser<'a> {
      */
     fn parse_enum_type_extension(&mut self) -> ParseResult<EnumTypeExtension> {
         // `extend enum` was already parsed
+        let start = self.index();
         let name = self.parse_identifier()?;
         let directives = self.parse_constant_directives()?;
         let values = self.parse_enum_values_definition()?;
+        let end = self.index();
+        let span = Span::new(start, end);
         Ok(EnumTypeExtension {
             name,
             directives,
             values,
+            span,
         })
     }
 
@@ -772,14 +780,18 @@ impl<'a> Parser<'a> {
      *   - Description? input Name Directives? InputFieldsDefinition?
      */
     fn parse_input_object_type_definition(&mut self) -> ParseResult<InputObjectTypeDefinition> {
+        let start = self.index();
         self.parse_keyword("input")?;
         let name = self.parse_identifier()?;
         let directives = self.parse_constant_directives()?;
         let fields = self.parse_input_fields_definition()?;
+        let end = self.index();
+        let span = Span::new(start, end);
         Ok(InputObjectTypeDefinition {
             name,
             directives,
             fields,
+            span,
         })
     }
 
@@ -790,13 +802,17 @@ impl<'a> Parser<'a> {
      */
     fn parse_input_object_type_extension(&mut self) -> ParseResult<InputObjectTypeExtension> {
         // `extend input` was parsed already here
+        let start = self.index();
         let name = self.parse_identifier()?;
         let directives = self.parse_constant_directives()?;
         let fields = self.parse_input_fields_definition()?;
+        let end = self.index();
+        let span = Span::new(start, end);
         Ok(InputObjectTypeExtension {
             name,
             directives,
             fields,
+            span,
         })
     }
 
@@ -978,6 +994,7 @@ impl<'a> Parser<'a> {
      *   - Description? Name ArgumentsDefinition? : Type Directives?
      */
     fn parse_field_definition_impl(&mut self) -> ParseResult<FieldDefinition> {
+        let start = self.index();
         let description = self.parse_optional_description();
         let hack_source = self.parse_optional_hack_source();
         let name = self.parse_identifier()?;
@@ -985,6 +1002,8 @@ impl<'a> Parser<'a> {
         self.parse_kind(TokenKind::Colon)?;
         let type_ = self.parse_type_annotation()?;
         let directives = self.parse_constant_directives()?;
+        let end = self.index();
+        let span = Span::new(start, end);
         Ok(FieldDefinition {
             name,
             type_,
@@ -992,6 +1011,7 @@ impl<'a> Parser<'a> {
             directives,
             description,
             hack_source,
+            span,
         })
     }
 

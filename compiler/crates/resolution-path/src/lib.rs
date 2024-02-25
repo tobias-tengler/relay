@@ -15,22 +15,29 @@ use graphql_syntax::DefaultValue;
 use graphql_syntax::Directive;
 use graphql_syntax::DirectiveDefinition;
 use graphql_syntax::EnumNode;
+use graphql_syntax::EnumTypeDefinition;
+use graphql_syntax::EnumTypeExtension;
 use graphql_syntax::ExecutableDefinition;
 use graphql_syntax::ExecutableDocument;
+use graphql_syntax::FieldDefinition;
 use graphql_syntax::FloatNode;
 use graphql_syntax::FragmentDefinition;
 use graphql_syntax::FragmentSpread;
 use graphql_syntax::Identifier;
 use graphql_syntax::InlineFragment;
+use graphql_syntax::InputObjectTypeDefinition;
+use graphql_syntax::InputObjectTypeExtension;
 use graphql_syntax::InputValueDefinition;
 use graphql_syntax::IntNode;
 use graphql_syntax::InterfaceTypeDefinition;
+use graphql_syntax::InterfaceTypeExtension;
 use graphql_syntax::LinkedField;
 use graphql_syntax::List;
 use graphql_syntax::ListTypeAnnotation;
 use graphql_syntax::NamedTypeAnnotation;
 use graphql_syntax::NonNullTypeAnnotation;
 use graphql_syntax::ObjectTypeDefinition;
+use graphql_syntax::ObjectTypeExtension;
 use graphql_syntax::OperationDefinition;
 use graphql_syntax::OperationKind;
 use graphql_syntax::ScalarField;
@@ -41,6 +48,7 @@ use graphql_syntax::Token;
 use graphql_syntax::TypeAnnotation;
 use graphql_syntax::TypeCondition;
 use graphql_syntax::UnionTypeDefinition;
+use graphql_syntax::UnionTypeExtension;
 use graphql_syntax::Value;
 use graphql_syntax::VariableDefinition;
 use graphql_syntax::VariableIdentifier;
@@ -145,8 +153,16 @@ pub enum ResolutionPath<'a> {
     DirectiveDefinition(DirectiveDefinitionPath<'a>),
     InputValueDefinition(InputValueDefinitionPath<'a>),
     UnionTypeDefinition(UnionTypeDefinitionPath<'a>),
+    UnionTypeExtension(UnionTypeExtensionPath<'a>),
     InterfaceTypeDefinition(InterfaceTypeDefinitionPath<'a>),
+    InterfaceTypeExtension(InterfaceTypeExtensionPath<'a>),
     ObjectTypeDefinition(ObjectTypeDefinitionPath<'a>),
+    ObjectTypeExtension(ObjectTypeExtensionPath<'a>),
+    InputObjectTypeDefinition(InputObjectTypeDefinitionPath<'a>),
+    InputObjectTypeExtension(InputObjectTypeExtensionPath<'a>),
+    EnumTypeDefinition(EnumTypeDefinitionPath<'a>),
+    EnumTypeExtension(EnumTypeExtensionPath<'a>),
+    FieldDefinition(FieldDefinitionPath<'a>),
 }
 #[derive(Debug)]
 pub struct Path<Inner, Parent> {
@@ -346,6 +362,8 @@ pub enum TypeAnnotationParent<'a> {
     VariableDefinition(VariableDefinitionPath<'a>),
     ListTypeAnnotation(ListTypeAnnotationPath<'a>),
     NonNullTypeAnnotation(NonNullTypeAnnotationPath<'a>),
+    FieldDefinition(FieldDefinitionPath<'a>),
+    InputValueDefinition(InputValueDefinitionPath<'a>),
 }
 impl<'a> ResolvePosition<'a> for TypeAnnotation {
     type Parent = TypeAnnotationParent<'a>;
@@ -549,11 +567,21 @@ pub enum IdentParent<'a> {
 
     DirectiveDefinitionName(DirectiveDefinitionPath<'a>),
     UnionTypeDefinitionName(UnionTypeDefinitionPath<'a>),
-    UnionTypeMemberName(UnionTypeDefinitionPath<'a>),
+    UnionTypeDefinitionMemberName(UnionTypeDefinitionPath<'a>),
+    UnionTypeExtensionName(UnionTypeExtensionPath<'a>),
+    UnionTypeExtensionMemberName(UnionTypeExtensionPath<'a>),
     InterfaceTypeDefinitionName(InterfaceTypeDefinitionPath<'a>),
+    InterfaceTypeExtensionName(InterfaceTypeExtensionPath<'a>),
     // TODO: Better name?
     ImplementedInterfaceTypeName(ObjectTypeDefinitionPath<'a>),
     ObjectTypeDefinitionName(ObjectTypeDefinitionPath<'a>),
+    ObjectTypeExtensionName(ObjectTypeExtensionPath<'a>),
+    InputObjectTypeDefinitionName(InputObjectTypeDefinitionPath<'a>),
+    InputObjectTypeExtensionName(InputObjectTypeExtensionPath<'a>),
+    EnumTypeDefinitionName(EnumTypeDefinitionPath<'a>),
+    EnumTypeExtensionName(EnumTypeExtensionPath<'a>),
+    FieldDefinitionName(FieldDefinitionPath<'a>),
+    InputValueDefinitionName(InputValueDefinitionPath<'a>),
 }
 
 impl<'a> ResolvePosition<'a> for Identifier {
@@ -1085,11 +1113,32 @@ impl<'a> ResolvePosition<'a> for TypeSystemDefinition {
             TypeSystemDefinition::UnionTypeDefinition(union) => {
                 union.resolve(self.path(parent), position)
             }
+            TypeSystemDefinition::UnionTypeExtension(union_ext) => {
+                union_ext.resolve(self.path(parent), position)
+            }
             TypeSystemDefinition::InterfaceTypeDefinition(interface) => {
                 interface.resolve(self.path(parent), position)
             }
+            TypeSystemDefinition::InterfaceTypeExtension(interface_ext) => {
+                interface_ext.resolve(self.path(parent), position)
+            }
             TypeSystemDefinition::ObjectTypeDefinition(object) => {
                 object.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::ObjectTypeExtension(object_ext) => {
+                object_ext.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::InputObjectTypeDefinition(input_object) => {
+                input_object.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::InputObjectTypeExtension(input_object_ext) => {
+                input_object_ext.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::EnumTypeDefinition(enum_type) => {
+                enum_type.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::EnumTypeExtension(enum_type_ext) => {
+                enum_type_ext.resolve(self.path(parent), position)
             }
             _ => panic!("Unknown path"),
         }
@@ -1099,10 +1148,25 @@ impl<'a> ResolvePosition<'a> for TypeSystemDefinition {
         match self {
             TypeSystemDefinition::DirectiveDefinition(directive) => directive.contains(position),
             TypeSystemDefinition::UnionTypeDefinition(union) => union.contains(position),
+            TypeSystemDefinition::UnionTypeExtension(union_ext) => union_ext.contains(position),
             TypeSystemDefinition::InterfaceTypeDefinition(interface) => {
                 interface.contains(position)
             }
+            TypeSystemDefinition::InterfaceTypeExtension(interface_ext) => {
+                interface_ext.contains(position)
+            }
             TypeSystemDefinition::ObjectTypeDefinition(object) => object.contains(position),
+            TypeSystemDefinition::ObjectTypeExtension(object_ext) => object_ext.contains(position),
+            TypeSystemDefinition::InputObjectTypeDefinition(input_object) => {
+                input_object.contains(position)
+            }
+            TypeSystemDefinition::InputObjectTypeExtension(input_object_ext) => {
+                input_object_ext.contains(position)
+            }
+            TypeSystemDefinition::EnumTypeDefinition(enum_type) => enum_type.contains(position),
+            TypeSystemDefinition::EnumTypeExtension(enum_type_ext) => {
+                enum_type_ext.contains(position)
+            }
             _ => false,
         }
     }
@@ -1126,8 +1190,7 @@ impl<'a> ResolvePosition<'a> for DirectiveDefinition {
             for argument in &arguments.items {
                 if argument.contains(position) {
                     return argument.resolve(
-                        // TODO: Inputvalueparent
-                        self.path(parent),
+                        InputValueDefinitionParent::DirectiveDefinition(self.path(parent)),
                         position,
                     );
                 }
@@ -1137,23 +1200,6 @@ impl<'a> ResolvePosition<'a> for DirectiveDefinition {
         // TODO: Implement
 
         ResolutionPath::DirectiveDefinition(self.path(parent))
-    }
-
-    fn contains(&'a self, position: Span) -> bool {
-        self.span.contains(position)
-    }
-}
-
-pub type InputValueDefinitionPath<'a> =
-    Path<&'a InputValueDefinition, InputValueDefinitionParent<'a>>;
-// TODO: Probably has multiple
-pub type InputValueDefinitionParent<'a> = DirectiveDefinitionPath<'a>;
-
-impl<'a> ResolvePosition<'a> for InputValueDefinition {
-    type Parent = InputValueDefinitionParent<'a>;
-
-    fn resolve(&'a self, parent: Self::Parent, _position: Span) -> ResolutionPath<'a> {
-        ResolutionPath::InputValueDefinition(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {
@@ -1178,13 +1224,44 @@ impl<'a> ResolvePosition<'a> for UnionTypeDefinition {
         for member in &self.members {
             if member.contains(position) {
                 return member.resolve(
-                    IdentParent::UnionTypeMemberName(self.path(parent)),
+                    IdentParent::UnionTypeDefinitionMemberName(self.path(parent)),
                     position,
                 );
             }
         }
 
         ResolutionPath::UnionTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type UnionTypeExtensionPath<'a> = Path<&'a UnionTypeExtension, UnionTypeExtensionParent<'a>>;
+pub type UnionTypeExtensionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for UnionTypeExtension {
+    type Parent = UnionTypeExtensionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::UnionTypeExtensionName(self.path(parent)),
+                position,
+            );
+        }
+
+        for member in &self.members {
+            if member.contains(position) {
+                return member.resolve(
+                    IdentParent::UnionTypeExtensionMemberName(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        ResolutionPath::UnionTypeExtension(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {
@@ -1207,7 +1284,52 @@ impl<'a> ResolvePosition<'a> for InterfaceTypeDefinition {
             );
         }
 
+        if let Some(field_list) = &self.fields {
+            for field in &field_list.items {
+                if field.contains(position) {
+                    return field.resolve(
+                        FieldDefinitionParent::InterfaceTypeDefinition(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
         ResolutionPath::InterfaceTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type InterfaceTypeExtensionPath<'a> =
+    Path<&'a InterfaceTypeExtension, InterfaceTypeExtensionParent<'a>>;
+pub type InterfaceTypeExtensionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for InterfaceTypeExtension {
+    type Parent = InterfaceTypeExtensionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::InterfaceTypeExtensionName(self.path(parent)),
+                position,
+            );
+        }
+
+        if let Some(field_list) = &self.fields {
+            for field in &field_list.items {
+                if field.contains(position) {
+                    return field.resolve(
+                        FieldDefinitionParent::InterfaceTypeExtension(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        ResolutionPath::InterfaceTypeExtension(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {
@@ -1239,7 +1361,254 @@ impl<'a> ResolvePosition<'a> for ObjectTypeDefinition {
             }
         }
 
+        if let Some(field_list) = &self.fields {
+            for field in &field_list.items {
+                if field.contains(position) {
+                    return field.resolve(
+                        FieldDefinitionParent::ObjectTypeDefinition(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
         ResolutionPath::ObjectTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+type ObjectTypeExtensionPath<'a> = Path<&'a ObjectTypeExtension, ObjectTypeExtensionParent<'a>>;
+pub type ObjectTypeExtensionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for ObjectTypeExtension {
+    type Parent = ObjectTypeExtensionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::ObjectTypeExtensionName(self.path(parent)),
+                position,
+            );
+        }
+
+        // for interface in &self.interfaces {
+        //     if interface.contains(position) {
+        //         return interface.resolve(
+        //             IdentParent::ImplementedInterfaceTypeName(self.path(parent)),
+        //             position,
+        //         );
+        //     }
+        // }
+
+        if let Some(field_list) = &self.fields {
+            for field in &field_list.items {
+                if field.contains(position) {
+                    return field.resolve(
+                        FieldDefinitionParent::ObjectTypeExtension(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        ResolutionPath::ObjectTypeExtension(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type FieldDefinitionPath<'a> = Path<&'a FieldDefinition, FieldDefinitionParent<'a>>;
+#[derive(Debug)]
+pub enum FieldDefinitionParent<'a> {
+    ObjectTypeDefinition(ObjectTypeDefinitionPath<'a>),
+    ObjectTypeExtension(ObjectTypeExtensionPath<'a>),
+    InterfaceTypeDefinition(InterfaceTypeDefinitionPath<'a>),
+    InterfaceTypeExtension(InterfaceTypeExtensionPath<'a>),
+}
+
+impl<'a> ResolvePosition<'a> for FieldDefinition {
+    type Parent = FieldDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::FieldDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        if let Some(arguments) = &self.arguments {
+            for argument in &arguments.items {
+                if argument.contains(position) {
+                    return argument.resolve(
+                        InputValueDefinitionParent::FieldDefinition(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        if self.type_.contains(position) {
+            return self.type_.resolve(
+                TypeAnnotationParent::FieldDefinition(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::FieldDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type InputObjectTypeDefinitionPath<'a> =
+    Path<&'a InputObjectTypeDefinition, InputObjectTypeDefinitionParent<'a>>;
+pub type InputObjectTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for InputObjectTypeDefinition {
+    type Parent = InputObjectTypeDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::InputObjectTypeDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        if let Some(field_list) = &self.fields {
+            for field in &field_list.items {
+                if field.contains(position) {
+                    return field.resolve(
+                        InputValueDefinitionParent::InputObjectTypeDefinition(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        ResolutionPath::InputObjectTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type InputObjectTypeExtensionPath<'a> =
+    Path<&'a InputObjectTypeExtension, InputObjectTypeExtensionParent<'a>>;
+pub type InputObjectTypeExtensionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for InputObjectTypeExtension {
+    type Parent = InputObjectTypeExtensionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::InputObjectTypeExtensionName(self.path(parent)),
+                position,
+            );
+        }
+
+        if let Some(field_list) = &self.fields {
+            for field in &field_list.items {
+                if field.contains(position) {
+                    return field.resolve(
+                        InputValueDefinitionParent::InputObjectTypeExtension(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        ResolutionPath::InputObjectTypeExtension(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type InputValueDefinitionPath<'a> =
+    Path<&'a InputValueDefinition, InputValueDefinitionParent<'a>>;
+#[derive(Debug)]
+pub enum InputValueDefinitionParent<'a> {
+    DirectiveDefinition(DirectiveDefinitionPath<'a>),
+    InputObjectTypeDefinition(InputObjectTypeDefinitionPath<'a>),
+    InputObjectTypeExtension(InputObjectTypeExtensionPath<'a>),
+    FieldDefinition(FieldDefinitionPath<'a>),
+}
+
+impl<'a> ResolvePosition<'a> for InputValueDefinition {
+    type Parent = InputValueDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::InputValueDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        if self.type_.contains(position) {
+            return self.type_.resolve(
+                TypeAnnotationParent::InputValueDefinition(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::InputValueDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type EnumTypeDefinitionPath<'a> = Path<&'a EnumTypeDefinition, EnumTypeDefinitionParent<'a>>;
+pub type EnumTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for EnumTypeDefinition {
+    type Parent = EnumTypeDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::EnumTypeDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::EnumTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type EnumTypeExtensionPath<'a> = Path<&'a EnumTypeExtension, EnumTypeExtensionParent<'a>>;
+pub type EnumTypeExtensionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for EnumTypeExtension {
+    type Parent = EnumTypeExtensionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::EnumTypeExtensionName(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::EnumTypeExtension(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {

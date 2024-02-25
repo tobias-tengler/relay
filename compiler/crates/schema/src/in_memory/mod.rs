@@ -1314,6 +1314,7 @@ impl InMemorySchema {
                 name,
                 fields,
                 directives,
+                ..
             }) => {
                 let fields = self.build_arguments(fields)?;
                 let directives = self.build_directive_values(directives);
@@ -1333,6 +1334,7 @@ impl InMemorySchema {
                 name,
                 directives,
                 values,
+                ..
             }) => {
                 let directives = self.build_directive_values(directives);
                 let values = if let Some(values) = values {
@@ -1485,6 +1487,7 @@ impl InMemorySchema {
                 name,
                 directives,
                 values,
+                ..
             }) => {
                 let enum_id = self.type_map.get(&name.value).cloned();
                 match enum_id {

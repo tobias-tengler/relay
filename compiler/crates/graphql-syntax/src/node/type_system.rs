@@ -131,6 +131,7 @@ impl fmt::Display for TypeSystemDefinition {
                 name,
                 directives,
                 fields,
+                ..
             }) => {
                 write_input_object_type_definition_helper(f, &name.value, directives, fields, false)
             }
@@ -138,6 +139,7 @@ impl fmt::Display for TypeSystemDefinition {
                 name,
                 directives,
                 fields,
+                ..
             }) => {
                 write_input_object_type_definition_helper(f, &name.value, directives, fields, true)
             }
@@ -145,11 +147,13 @@ impl fmt::Display for TypeSystemDefinition {
                 name,
                 directives,
                 values,
+                ..
             }) => write_enum_type_definition_helper(f, &name.value, directives, values, false),
             TypeSystemDefinition::EnumTypeExtension(EnumTypeExtension {
                 name,
                 directives,
                 values,
+                ..
             }) => write_enum_type_definition_helper(f, &name.value, directives, values, true),
             TypeSystemDefinition::ScalarTypeDefinition(ScalarTypeDefinition {
                 name,
@@ -358,6 +362,7 @@ pub struct EnumTypeDefinition {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
     pub values: Option<List<EnumValueDefinition>>,
+    pub span: Span,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -365,6 +370,7 @@ pub struct EnumTypeExtension {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
     pub values: Option<List<EnumValueDefinition>>,
+    pub span: Span,
 }
 impl From<EnumTypeExtension> for EnumTypeDefinition {
     fn from(ext: EnumTypeExtension) -> Self {
@@ -372,6 +378,7 @@ impl From<EnumTypeExtension> for EnumTypeDefinition {
             name: ext.name,
             directives: ext.directives,
             values: ext.values,
+            span: ext.span,
         }
     }
 }
@@ -384,6 +391,7 @@ pub struct InputObjectTypeDefinition {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
     pub fields: Option<List<InputValueDefinition>>,
+    pub span: Span,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -391,6 +399,7 @@ pub struct InputObjectTypeExtension {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
     pub fields: Option<List<InputValueDefinition>>,
+    pub span: Span,
 }
 impl From<InputObjectTypeExtension> for InputObjectTypeDefinition {
     fn from(ext: InputObjectTypeExtension) -> Self {
@@ -398,6 +407,7 @@ impl From<InputObjectTypeExtension> for InputObjectTypeDefinition {
             name: ext.name,
             directives: ext.directives,
             fields: ext.fields,
+            span: ext.span,
         }
     }
 }
@@ -529,6 +539,7 @@ pub struct FieldDefinition {
     pub directives: Vec<ConstantDirective>,
     pub description: Option<StringNode>,
     pub hack_source: Option<StringNode>,
+    pub span: Span,
 }
 
 impl fmt::Display for FieldDefinition {

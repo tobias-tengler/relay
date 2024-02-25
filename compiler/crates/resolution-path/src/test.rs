@@ -451,7 +451,7 @@ fn union_type_definition_name() {
 }
 
 #[test]
-fn union_type_member_name() {
+fn union_type_definition_member_name() {
     let source = r#"
         union Foo = Bar | Baz
         "#;
@@ -460,7 +460,39 @@ fn union_type_member_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::UnionTypeMemberName(_),
+                parent: IdentParent::UnionTypeDefinitionMemberName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn union_type_extension_name() {
+    let source = r#"
+        extend union Foo = Bar | Baz
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::UnionTypeExtensionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn union_type_extension_member_name() {
+    let source = r#"
+        extend union Foo = Bar | Baz
+        "#;
+    test_schema_resolution(source, "Bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::UnionTypeExtensionMemberName(_),
             })
         );
     })
@@ -492,7 +524,7 @@ fn interface_type_definition_name() {
 fn object_type_definition_name() {
     let source = r#"
         type Foo {
-            bar: String
+            bar: Baz
         }
         "#;
     test_schema_resolution(source, "Foo", |resolved| {
@@ -510,7 +542,7 @@ fn object_type_definition_name() {
 fn object_type_implemented_interface_name() {
     let source = r#"
         type Foo implements Node {
-            bar: String
+            bar: Baz
         }
         "#;
     test_schema_resolution(source, "Node", |resolved| {
@@ -519,6 +551,210 @@ fn object_type_implemented_interface_name() {
             ResolutionPath::Ident(IdentPath {
                 inner: _,
                 parent: IdentParent::ImplementedInterfaceTypeName(_),
+            })
+        );
+    })
+}
+
+// ## Input Object Types
+
+#[test]
+fn input_object_type_definition_name() {
+    let source = r#"
+        input Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InputObjectTypeDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_object_type_field_definition_name() {
+    let source = r#"
+        input Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InputValueDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_object_type_field_definition_named_type() {
+    let source = r#"
+        input Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_object_type_field_definition_non_null_type() {
+    let source = r#"
+        input Foo {
+            bar: Baz!
+        }
+        "#;
+    test_schema_resolution(source, "Baz!", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
+                    }
+                }),
+            })
+        );
+    })
+}
+
+// ## Field Definitions
+
+#[test]
+fn field_definition_name() {
+    let source = r#"
+        type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::FieldDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn field_definition_named_type() {
+    let source = r#"
+        type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn field_definition_non_null_type() {
+    let source = r#"
+        type Foo {
+            bar: Baz!
+        }
+        "#;
+    test_schema_resolution(source, "Baz!", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
+                    }
+                }),
+            })
+        );
+    })
+}
+
+// ## Input Value Definitions
+
+#[test]
+fn input_value_definition_name() {
+    let source = r#"
+        type Foo {
+            bar(baz: Qux): Quux
+        }
+        "#;
+    test_schema_resolution(source, "baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InputValueDefinitionName(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_value_definition_named_type() {
+    let source = r#"
+        type Foo {
+            bar(baz: Qux): Quux
+        }
+        "#;
+    test_schema_resolution(source, "Qux", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_value_definition_non_null_type() {
+    let source = r#"
+        type Foo {
+            bar(baz: Qux!): Quux
+        }
+        "#;
+    test_schema_resolution(source, "Qux!", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
+                    }
+                }),
             })
         );
     })

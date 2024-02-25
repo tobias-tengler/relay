@@ -131,6 +131,7 @@ enum HoverBehavior<'a> {
     Directive(&'a DirectivePath<'a>),
     FragmentDefinition(&'a FragmentDefinition),
     ExecutableDocument,
+    None,
 }
 
 fn get_hover_behavior_from_resolution_path<'a>(path: &'a ResolutionPath<'a>) -> HoverBehavior<'a> {
@@ -184,21 +185,21 @@ fn get_hover_behavior_from_resolution_path<'a>(path: &'a ResolutionPath<'a>) -> 
         ResolutionPath::NonNullTypeAnnotation(NonNullTypeAnnotationPath {
             inner: _,
             parent: non_null_annotation_parent,
-        }) => HoverBehavior::VariableDefinition(
-            non_null_annotation_parent
-                .parent
-                .find_variable_definition_path()
-                .inner,
-        ),
+        }) => non_null_annotation_parent
+            .parent
+            .find_variable_definition_path()
+            .map_or(HoverBehavior::None, |path| {
+                HoverBehavior::VariableDefinition(path.inner)
+            }),
         ResolutionPath::ListTypeAnnotation(ListTypeAnnotationPath {
             inner: _,
             parent: list_type_annotation_parent,
-        }) => HoverBehavior::VariableDefinition(
-            list_type_annotation_parent
-                .parent
-                .find_variable_definition_path()
-                .inner,
-        ),
+        }) => list_type_annotation_parent
+            .parent
+            .find_variable_definition_path()
+            .map_or(HoverBehavior::None, |path| {
+                HoverBehavior::VariableDefinition(path.inner)
+            }),
         ResolutionPath::Ident(IdentPath {
             inner: _,
             parent:
@@ -210,9 +211,11 @@ fn get_hover_behavior_from_resolution_path<'a>(path: &'a ResolutionPath<'a>) -> 
                             parent: type_annotation_parent,
                         },
                 }),
-        }) => HoverBehavior::VariableDefinition(
-            type_annotation_parent.find_variable_definition_path().inner,
-        ),
+        }) => type_annotation_parent
+            .find_variable_definition_path()
+            .map_or(HoverBehavior::None, |path| {
+                HoverBehavior::VariableDefinition(path.inner)
+            }),
 
         // Explicitly don't show hovers for VariableDefinitionList
         ResolutionPath::VariableDefinitionList(_) => HoverBehavior::VariableDefinitionList,
@@ -500,6 +503,7 @@ fn get_hover_contents<'a>(
         ),
 
         HoverBehavior::ExecutableDocument => None,
+        HoverBehavior::None => None,
     }
 }
 

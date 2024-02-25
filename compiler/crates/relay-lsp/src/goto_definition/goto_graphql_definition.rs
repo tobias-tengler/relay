@@ -36,7 +36,9 @@ pub fn get_schema_definition_description(
     match node_path {
         ResolutionPath::Ident(IdentPath {
             inner: union_type_member_name,
-            parent: IdentParent::UnionTypeMemberName(_),
+            parent:
+                IdentParent::UnionTypeDefinitionMemberName(_)
+                | IdentParent::UnionTypeExtensionMemberName(_),
         }) => Ok(DefinitionDescription::Type {
             type_name: union_type_member_name.value,
         }),
@@ -45,6 +47,23 @@ pub fn get_schema_definition_description(
             parent: IdentParent::ImplementedInterfaceTypeName(_),
         }) => Ok(DefinitionDescription::Type {
             type_name: implemented_interface_name.value,
+        }),
+        ResolutionPath::Ident(IdentPath {
+            inner: field_type_name,
+            parent: IdentParent::NamedTypeAnnotation(_),
+        }) => Ok(DefinitionDescription::Type {
+            type_name: field_type_name.value,
+        }),
+        ResolutionPath::Ident(IdentPath {
+            inner: type_extension_name,
+            parent:
+                IdentParent::ObjectTypeExtensionName(_)
+                | IdentParent::InterfaceTypeExtensionName(_)
+                | IdentParent::UnionTypeExtensionName(_)
+                | IdentParent::InputObjectTypeExtensionName(_)
+                | IdentParent::EnumTypeExtensionName(_),
+        }) => Ok(DefinitionDescription::Type {
+            type_name: type_extension_name.value,
         }),
         _ => Err(LSPRuntimeError::ExpectedError),
     }
