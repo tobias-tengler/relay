@@ -75,9 +75,12 @@ Text Schema:Schema {
   subscription_type: None
   directives: [
     Directive {
-        name: DirectiveName(
-            "include",
-        ),
+        name: WithLocation {
+            location: <generated>:255:262,
+            item: DirectiveName(
+                "include",
+            ),
+        },
         arguments: [
             Argument {
                 name: ArgumentName(
@@ -104,9 +107,12 @@ Text Schema:Schema {
         hack_source: None,
     },
     Directive {
-        name: DirectiveName(
-            "skip",
-        ),
+        name: WithLocation {
+            location: <generated>:334:338,
+            item: DirectiveName(
+                "skip",
+            ),
+        },
         arguments: [
             Argument {
                 name: ArgumentName(
@@ -133,9 +139,12 @@ Text Schema:Schema {
         hack_source: None,
     },
     Directive {
-        name: DirectiveName(
-            "source",
-        ),
+        name: WithLocation {
+            location: <generated>:11:17,
+            item: DirectiveName(
+                "source",
+            ),
+        },
         arguments: [
             Argument {
                 name: ArgumentName(
@@ -206,7 +215,10 @@ Text Schema:Schema {
         is_extension: false,
         values: [
             EnumValue {
-                value: "DEAULT",
+                value: WithLocation {
+                    location: <generated>:353:359,
+                    item: "DEAULT",
+                },
                 directives: [
                     DirectiveValue {
                         name: DirectiveName(
@@ -232,11 +244,17 @@ Text Schema:Schema {
                 ],
             },
             EnumValue {
-                value: "PUBLIC",
+                value: WithLocation {
+                    location: <generated>:405:411,
+                    item: "PUBLIC",
+                },
                 directives: [],
             },
             EnumValue {
-                value: "PRIVATE",
+                value: WithLocation {
+                    location: <generated>:414:421,
+                    item: "PRIVATE",
+                },
                 directives: [],
             },
         ],
@@ -994,9 +1012,12 @@ Text Schema:Schema {
 FlatBuffer Schema:FB Schema {
 directives: [
     Directive {
-        name: DirectiveName(
-            "include",
-        ),
+        name: WithLocation {
+            location: <generated>:0:0,
+            item: DirectiveName(
+                "include",
+            ),
+        },
         arguments: [
             Argument {
                 name: ArgumentName(
@@ -1023,9 +1044,12 @@ directives: [
         hack_source: None,
     },
     Directive {
-        name: DirectiveName(
-            "skip",
-        ),
+        name: WithLocation {
+            location: <generated>:0:0,
+            item: DirectiveName(
+                "skip",
+            ),
+        },
         arguments: [
             Argument {
                 name: ArgumentName(
@@ -1052,9 +1076,12 @@ directives: [
         hack_source: None,
     },
     Directive {
-        name: DirectiveName(
-            "source",
-        ),
+        name: WithLocation {
+            location: <generated>:0:0,
+            item: DirectiveName(
+                "source",
+            ),
+        },
         arguments: [
             Argument {
                 name: ArgumentName(
@@ -1108,7 +1135,10 @@ enums: [
         is_extension: false,
         values: [
             EnumValue {
-                value: "DEAULT",
+                value: WithLocation {
+                    location: <generated>:0:0,
+                    item: "DEAULT",
+                },
                 directives: [
                     DirectiveValue {
                         name: DirectiveName(
@@ -1134,11 +1164,17 @@ enums: [
                 ],
             },
             EnumValue {
-                value: "PUBLIC",
+                value: WithLocation {
+                    location: <generated>:0:0,
+                    item: "PUBLIC",
+                },
                 directives: [],
             },
             EnumValue {
-                value: "PRIVATE",
+                value: WithLocation {
+                    location: <generated>:0:0,
+                    item: "PRIVATE",
+                },
                 directives: [],
             },
         ],

@@ -479,7 +479,9 @@ fn union_type_definition_member_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::UnionTypeDefinitionMemberName(_),
+                parent: IdentParent::UnionTypeMemberType(
+                    UnionTypeMemberParent::UnionTypeDefinition(_),
+                )
             })
         );
     })
@@ -532,7 +534,9 @@ fn union_type_extension_member_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::UnionTypeExtensionMemberName(_),
+                parent: IdentParent::UnionTypeMemberType(
+                    UnionTypeMemberParent::UnionTypeExtension(_),
+                )
             })
         );
     })
@@ -589,7 +593,9 @@ fn interface_type_definition_implements_interface() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::InterfaceTypeDefinitionImplementedInterfaceName(_),
+                parent: IdentParent::ImplementedInterfaceName(
+                    ImplementedInterfaceParent::InterfaceTypeDefinition(_),
+                )
             })
         );
     })
@@ -669,7 +675,9 @@ fn interface_type_extension_implements_interface() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::InterfaceTypeExtensionImplementedInterfaceName(_),
+                parent: IdentParent::ImplementedInterfaceName(
+                    ImplementedInterfaceParent::InterfaceTypeExtension(_),
+                )
             })
         );
     })
@@ -749,7 +757,9 @@ fn object_type_definition_implements_interface_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::ObjectTypeDefinitionImplementedInterfaceName(_),
+                parent: IdentParent::ImplementedInterfaceName(
+                    ImplementedInterfaceParent::ObjectTypeDefinition(_)
+                )
             })
         );
     })
@@ -829,7 +839,9 @@ fn object_type_extension_implements_interface_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::ObjectTypeExtensionImplementedInterfaceName(_),
+                parent: IdentParent::ImplementedInterfaceName(
+                    ImplementedInterfaceParent::ObjectTypeExtension(_)
+                )
             })
         );
     })
@@ -1378,7 +1390,26 @@ fn field_definition_directive() {
     })
 }
 
-// TODO: arguments
+#[test]
+fn field_definition_argument() {
+    let source = r#"
+        type Foo {
+            bar(baz: Qux): Quux
+        }
+        "#;
+    test_schema_resolution(source, "baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InputValueDefinitionName(InputValueDefinitionPath {
+                    inner: _,
+                    parent: InputValueDefinitionParent::FieldDefinition(_),
+                })
+            })
+        );
+    })
+}
 
 // ## Input Value Definition
 

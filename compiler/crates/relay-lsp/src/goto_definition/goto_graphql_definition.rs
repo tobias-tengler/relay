@@ -43,19 +43,13 @@ pub fn get_schema_definition_description(
     match node_path {
         ResolutionPath::Ident(IdentPath {
             inner: union_type_member_name,
-            parent:
-                IdentParent::UnionTypeDefinitionMemberName(_)
-                | IdentParent::UnionTypeExtensionMemberName(_),
+            parent: IdentParent::UnionTypeMemberType(_),
         }) => Ok(DefinitionDescription::Type {
             type_name: union_type_member_name.value,
         }),
         ResolutionPath::Ident(IdentPath {
             inner: implemented_interface_name,
-            parent:
-                IdentParent::ObjectTypeDefinitionImplementedInterfaceName(_)
-                | IdentParent::ObjectTypeExtensionImplementedInterfaceName(_)
-                | IdentParent::InterfaceTypeDefinitionImplementedInterfaceName(_)
-                | IdentParent::InterfaceTypeExtensionImplementedInterfaceName(_),
+            parent: IdentParent::ImplementedInterfaceName(_),
         }) => Ok(DefinitionDescription::Type {
             type_name: implemented_interface_name.value,
         }),

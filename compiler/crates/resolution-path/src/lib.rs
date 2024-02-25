@@ -589,18 +589,12 @@ pub enum IdentParent<'a> {
     DirectiveDefinitionName(DirectiveDefinitionPath<'a>),
     UnionTypeDefinitionName(UnionTypeDefinitionPath<'a>),
     UnionTypeExtensionName(UnionTypeExtensionPath<'a>),
-    // TODO: Can we merge these two?
-    UnionTypeDefinitionMemberName(UnionTypeDefinitionPath<'a>),
-    UnionTypeExtensionMemberName(UnionTypeExtensionPath<'a>),
+    UnionTypeMemberType(UnionTypeMemberParent<'a>),
     InterfaceTypeDefinitionName(InterfaceTypeDefinitionPath<'a>),
     InterfaceTypeExtensionName(InterfaceTypeExtensionPath<'a>),
-    // TODO: Can we merge these?
-    InterfaceTypeDefinitionImplementedInterfaceName(InterfaceTypeDefinitionPath<'a>),
-    InterfaceTypeExtensionImplementedInterfaceName(InterfaceTypeExtensionPath<'a>),
-    ObjectTypeDefinitionImplementedInterfaceName(ObjectTypeDefinitionPath<'a>),
-    ObjectTypeExtensionImplementedInterfaceName(ObjectTypeExtensionPath<'a>),
     ObjectTypeDefinitionName(ObjectTypeDefinitionPath<'a>),
     ObjectTypeExtensionName(ObjectTypeExtensionPath<'a>),
+    ImplementedInterfaceName(ImplementedInterfaceParent<'a>),
     InputObjectTypeDefinitionName(InputObjectTypeDefinitionPath<'a>),
     InputObjectTypeExtensionName(InputObjectTypeExtensionPath<'a>),
     EnumTypeDefinitionName(EnumTypeDefinitionPath<'a>),
@@ -1256,6 +1250,12 @@ impl<'a> ResolvePosition<'a> for DirectiveDefinition {
     }
 }
 
+#[derive(Debug)]
+pub enum UnionTypeMemberParent<'a> {
+    UnionTypeDefinition(UnionTypeDefinitionPath<'a>),
+    UnionTypeExtension(UnionTypeExtensionPath<'a>),
+}
+
 pub type UnionTypeDefinitionPath<'a> = Path<&'a UnionTypeDefinition, UnionTypeDefinitionParent<'a>>;
 pub type UnionTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
 
@@ -1273,7 +1273,9 @@ impl<'a> ResolvePosition<'a> for UnionTypeDefinition {
         for member in &self.members {
             if member.contains(position) {
                 return member.resolve(
-                    IdentParent::UnionTypeDefinitionMemberName(self.path(parent)),
+                    IdentParent::UnionTypeMemberType(UnionTypeMemberParent::UnionTypeDefinition(
+                        self.path(parent),
+                    )),
                     position,
                 );
             }
@@ -1313,7 +1315,9 @@ impl<'a> ResolvePosition<'a> for UnionTypeExtension {
         for member in &self.members {
             if member.contains(position) {
                 return member.resolve(
-                    IdentParent::UnionTypeExtensionMemberName(self.path(parent)),
+                    IdentParent::UnionTypeMemberType(UnionTypeMemberParent::UnionTypeExtension(
+                        self.path(parent),
+                    )),
                     position,
                 );
             }
@@ -1336,6 +1340,14 @@ impl<'a> ResolvePosition<'a> for UnionTypeExtension {
     }
 }
 
+#[derive(Debug)]
+pub enum ImplementedInterfaceParent<'a> {
+    ObjectTypeDefinition(ObjectTypeDefinitionPath<'a>),
+    ObjectTypeExtension(ObjectTypeExtensionPath<'a>),
+    InterfaceTypeDefinition(InterfaceTypeDefinitionPath<'a>),
+    InterfaceTypeExtension(InterfaceTypeExtensionPath<'a>),
+}
+
 pub type InterfaceTypeDefinitionPath<'a> =
     Path<&'a InterfaceTypeDefinition, InterfaceTypeDefinitionParent<'a>>;
 pub type InterfaceTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
@@ -1354,7 +1366,9 @@ impl<'a> ResolvePosition<'a> for InterfaceTypeDefinition {
         for interface in &self.interfaces {
             if interface.contains(position) {
                 return interface.resolve(
-                    IdentParent::InterfaceTypeDefinitionImplementedInterfaceName(self.path(parent)),
+                    IdentParent::ImplementedInterfaceName(
+                        ImplementedInterfaceParent::InterfaceTypeDefinition(self.path(parent)),
+                    ),
                     position,
                 );
             }
@@ -1406,7 +1420,9 @@ impl<'a> ResolvePosition<'a> for InterfaceTypeExtension {
         for interface in &self.interfaces {
             if interface.contains(position) {
                 return interface.resolve(
-                    IdentParent::InterfaceTypeExtensionImplementedInterfaceName(self.path(parent)),
+                    IdentParent::ImplementedInterfaceName(
+                        ImplementedInterfaceParent::InterfaceTypeExtension(self.path(parent)),
+                    ),
                     position,
                 );
             }
@@ -1458,7 +1474,9 @@ impl<'a> ResolvePosition<'a> for ObjectTypeDefinition {
         for interface in &self.interfaces {
             if interface.contains(position) {
                 return interface.resolve(
-                    IdentParent::ObjectTypeDefinitionImplementedInterfaceName(self.path(parent)),
+                    IdentParent::ImplementedInterfaceName(
+                        ImplementedInterfaceParent::ObjectTypeDefinition(self.path(parent)),
+                    ),
                     position,
                 );
             }
@@ -1509,7 +1527,9 @@ impl<'a> ResolvePosition<'a> for ObjectTypeExtension {
         for interface in &self.interfaces {
             if interface.contains(position) {
                 return interface.resolve(
-                    IdentParent::ObjectTypeExtensionImplementedInterfaceName(self.path(parent)),
+                    IdentParent::ImplementedInterfaceName(
+                        ImplementedInterfaceParent::ObjectTypeExtension(self.path(parent)),
+                    ),
                     position,
                 );
             }
