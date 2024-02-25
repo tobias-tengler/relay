@@ -469,6 +469,7 @@ impl<'a> Parser<'a> {
      * SchemaDefinition : schema Directives? { OperationTypeDefinition+ }
      */
     fn parse_schema_definition(&mut self) -> ParseResult<SchemaDefinition> {
+        let start = self.index();
         self.parse_keyword("schema")?;
         let directives = self.parse_constant_directives()?;
         let operation_types = self.parse_delimited_nonempty_list(
@@ -476,9 +477,12 @@ impl<'a> Parser<'a> {
             TokenKind::CloseBrace,
             Self::parse_operation_type_definition,
         )?;
+        let end = self.index();
+        let span = Span::new(start, end);
         Ok(SchemaDefinition {
             directives,
             operation_types,
+            span,
         })
     }
 
@@ -489,15 +493,19 @@ impl<'a> Parser<'a> {
      */
     fn parse_schema_extension(&mut self) -> ParseResult<SchemaExtension> {
         // `extend schema` was already parsed
+        let start = self.index();
         let directives = self.parse_constant_directives()?;
         let operation_types = self.parse_optional_delimited_nonempty_list(
             TokenKind::OpenBrace,
             TokenKind::CloseBrace,
             Self::parse_operation_type_definition,
         )?;
+        let end = self.index();
+        let span = Span::new(start, end);
         Ok(SchemaExtension {
             directives,
             operation_types,
+            span,
         })
     }
 
@@ -505,10 +513,17 @@ impl<'a> Parser<'a> {
      * OperationTypeDefinition : OperationType : NamedType
      */
     fn parse_operation_type_definition(&mut self) -> ParseResult<OperationTypeDefinition> {
+        let start = self.index();
         let operation = self.parse_operation_type()?;
         self.parse_kind(TokenKind::Colon)?;
         let type_ = self.parse_identifier()?;
-        Ok(OperationTypeDefinition { operation, type_ })
+        let end = self.index();
+        let span = Span::new(start, end);
+        Ok(OperationTypeDefinition {
+            operation,
+            type_,
+            span,
+        })
     }
 
     /**
@@ -758,10 +773,17 @@ impl<'a> Parser<'a> {
      * ScalarTypeDefinition : Description? scalar Name Directives?
      */
     fn parse_scalar_type_definition(&mut self) -> ParseResult<ScalarTypeDefinition> {
+        let start = self.index();
         self.parse_keyword("scalar")?;
         let name = self.parse_identifier()?;
         let directives = self.parse_constant_directives()?;
-        Ok(ScalarTypeDefinition { name, directives })
+        let end = self.index();
+        let span = Span::new(start, end);
+        Ok(ScalarTypeDefinition {
+            name,
+            directives,
+            span,
+        })
     }
 
     /**
@@ -770,9 +792,16 @@ impl<'a> Parser<'a> {
      */
     fn parse_scalar_type_extension(&mut self) -> ParseResult<ScalarTypeExtension> {
         // `extend scalar` was parsed before
+        let start = self.index();
         let name = self.parse_identifier()?;
         let directives = self.parse_constant_directives()?;
-        Ok(ScalarTypeExtension { name, directives })
+        let end = self.index();
+        let span = Span::new(start, end);
+        Ok(ScalarTypeExtension {
+            name,
+            directives,
+            span,
+        })
     }
 
     /**

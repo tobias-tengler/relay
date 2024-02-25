@@ -1398,6 +1398,8 @@ impl WeakObjectIr {
                     },
                 ])),
             }],
+            // TODO: Fix
+            span: Span::empty(),
         })
     }
 

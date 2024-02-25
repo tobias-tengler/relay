@@ -1043,3 +1043,85 @@ fn enum_extension_name() {
 }
 
 // TODO: Enum values
+
+// ## Scalar Types
+
+#[test]
+fn scalar_definition_name() {
+    let source = r#"
+        scalar Foo
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ScalarTypeDefinitionName(_),
+            })
+        );
+    })
+}
+
+// ## Scalar Type Extensions
+
+#[test]
+fn scalar_extension_name() {
+    let source = r#"
+        extend scalar Foo
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ScalarTypeExtensionName(_),
+            })
+        );
+    })
+}
+
+// ## Schema Definition
+
+#[test]
+fn schema_definition_operation_type_type_name() {
+    let source = r#"
+        schema {
+            query: Foo
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::OperationTypeDefinitionType(OperationTypeDefinitionPath {
+                    inner: _,
+                    parent: OperationTypeDefinitionParent::SchemaDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+// ## Schema Extension
+
+#[test]
+fn schema_extension_operation_type_type_name() {
+    let source = r#"
+        extend schema {
+            query: Foo
+        }
+        "#;
+    test_schema_resolution(source, "Foo", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::OperationTypeDefinitionType(OperationTypeDefinitionPath {
+                    inner: _,
+                    parent: OperationTypeDefinitionParent::SchemaExtension(_),
+                }),
+            })
+        );
+    })
+}

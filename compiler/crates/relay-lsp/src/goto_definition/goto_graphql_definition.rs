@@ -44,7 +44,9 @@ pub fn get_schema_definition_description(
         }),
         ResolutionPath::Ident(IdentPath {
             inner: implemented_interface_name,
-            parent: IdentParent::ImplementedInterfaceTypeName(_),
+            parent:
+                IdentParent::ObjectTypeDefinitionImplementedInterfaceName(_)
+                | IdentParent::ObjectTypeExtensionImplementedInterfaceName(_),
         }) => Ok(DefinitionDescription::Type {
             type_name: implemented_interface_name.value,
         }),
@@ -55,13 +57,20 @@ pub fn get_schema_definition_description(
             type_name: field_type_name.value,
         }),
         ResolutionPath::Ident(IdentPath {
+            inner: operation_type_definition_type_name,
+            parent: IdentParent::OperationTypeDefinitionType(_),
+        }) => Ok(DefinitionDescription::Type {
+            type_name: operation_type_definition_type_name.value,
+        }),
+        ResolutionPath::Ident(IdentPath {
             inner: type_extension_name,
             parent:
                 IdentParent::ObjectTypeExtensionName(_)
                 | IdentParent::InterfaceTypeExtensionName(_)
                 | IdentParent::UnionTypeExtensionName(_)
                 | IdentParent::InputObjectTypeExtensionName(_)
-                | IdentParent::EnumTypeExtensionName(_),
+                | IdentParent::EnumTypeExtensionName(_)
+                | IdentParent::ScalarTypeExtensionName(_),
         }) => Ok(DefinitionDescription::Type {
             type_name: type_extension_name.value,
         }),

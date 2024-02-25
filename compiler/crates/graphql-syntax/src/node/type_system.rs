@@ -65,10 +65,12 @@ impl fmt::Display for TypeSystemDefinition {
             TypeSystemDefinition::SchemaDefinition(SchemaDefinition {
                 directives,
                 operation_types,
+                ..
             }) => write_schema_definition_helper(f, directives, &operation_types.items),
             TypeSystemDefinition::SchemaExtension(SchemaExtension {
                 directives,
                 operation_types,
+                ..
             }) => write_schema_extension_helper(f, directives, operation_types),
             TypeSystemDefinition::ObjectTypeDefinition(ObjectTypeDefinition {
                 name,
@@ -158,10 +160,13 @@ impl fmt::Display for TypeSystemDefinition {
             TypeSystemDefinition::ScalarTypeDefinition(ScalarTypeDefinition {
                 name,
                 directives,
+                ..
             }) => write_scalar_type_definition_helper(f, &name.value, directives, false),
-            TypeSystemDefinition::ScalarTypeExtension(ScalarTypeExtension { name, directives }) => {
-                write_scalar_type_definition_helper(f, &name.value, directives, true)
-            }
+            TypeSystemDefinition::ScalarTypeExtension(ScalarTypeExtension {
+                name,
+                directives,
+                ..
+            }) => write_scalar_type_definition_helper(f, &name.value, directives, true),
         }
     }
 }
@@ -182,12 +187,14 @@ pub trait ExtensionIntoDefinition: Sized {
 pub struct SchemaDefinition {
     pub directives: Vec<ConstantDirective>,
     pub operation_types: List<OperationTypeDefinition>,
+    pub span: Span,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub struct SchemaExtension {
     pub directives: Vec<ConstantDirective>,
     pub operation_types: Option<List<OperationTypeDefinition>>,
+    pub span: Span,
 }
 impl From<SchemaExtension> for SchemaDefinition {
     fn from(ext: SchemaExtension) -> Self {
@@ -205,6 +212,7 @@ impl From<SchemaExtension> for SchemaDefinition {
                     kind: TokenKind::CloseBrace,
                 },
             }),
+            span: ext.span,
         }
     }
 }
@@ -216,6 +224,7 @@ impl ExtensionIntoDefinition for SchemaExtension {
 pub struct OperationTypeDefinition {
     pub operation: OperationType,
     pub type_: Identifier,
+    pub span: Span,
 }
 
 impl fmt::Display for OperationTypeDefinition {
@@ -338,18 +347,21 @@ impl ExtensionIntoDefinition for UnionTypeExtension {
 pub struct ScalarTypeDefinition {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
+    pub span: Span,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub struct ScalarTypeExtension {
     pub name: Identifier,
     pub directives: Vec<ConstantDirective>,
+    pub span: Span,
 }
 impl From<ScalarTypeExtension> for ScalarTypeDefinition {
     fn from(ext: ScalarTypeExtension) -> Self {
         Self {
             name: ext.name,
             directives: ext.directives,
+            span: ext.span,
         }
     }
 }

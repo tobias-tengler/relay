@@ -40,8 +40,13 @@ use graphql_syntax::ObjectTypeDefinition;
 use graphql_syntax::ObjectTypeExtension;
 use graphql_syntax::OperationDefinition;
 use graphql_syntax::OperationKind;
+use graphql_syntax::OperationTypeDefinition;
 use graphql_syntax::ScalarField;
+use graphql_syntax::ScalarTypeDefinition;
+use graphql_syntax::ScalarTypeExtension;
+use graphql_syntax::SchemaDefinition;
 use graphql_syntax::SchemaDocument;
+use graphql_syntax::SchemaExtension;
 use graphql_syntax::Selection;
 use graphql_syntax::StringNode;
 use graphql_syntax::Token;
@@ -150,6 +155,9 @@ pub enum ResolutionPath<'a> {
     DefaultValue(DefaultValuePath<'a>),
 
     SchemaDocument(&'a SchemaDocument),
+    SchemaDefinition(SchemaDefinitionPath<'a>),
+    SchemaExtension(SchemaExtensionPath<'a>),
+    OperationTypeDefinition(OperationTypeDefinitionPath<'a>),
     DirectiveDefinition(DirectiveDefinitionPath<'a>),
     InputValueDefinition(InputValueDefinitionPath<'a>),
     UnionTypeDefinition(UnionTypeDefinitionPath<'a>),
@@ -162,6 +170,8 @@ pub enum ResolutionPath<'a> {
     InputObjectTypeExtension(InputObjectTypeExtensionPath<'a>),
     EnumTypeDefinition(EnumTypeDefinitionPath<'a>),
     EnumTypeExtension(EnumTypeExtensionPath<'a>),
+    ScalarTypeDefinition(ScalarTypeDefinitionPath<'a>),
+    ScalarTypeExtension(ScalarTypeExtensionPath<'a>),
     FieldDefinition(FieldDefinitionPath<'a>),
 }
 #[derive(Debug)]
@@ -582,8 +592,11 @@ pub enum IdentParent<'a> {
     InputObjectTypeExtensionName(InputObjectTypeExtensionPath<'a>),
     EnumTypeDefinitionName(EnumTypeDefinitionPath<'a>),
     EnumTypeExtensionName(EnumTypeExtensionPath<'a>),
+    ScalarTypeDefinitionName(ScalarTypeDefinitionPath<'a>),
+    ScalarTypeExtensionName(ScalarTypeExtensionPath<'a>),
     FieldDefinitionName(FieldDefinitionPath<'a>),
     InputValueDefinitionName(InputValueDefinitionPath<'a>),
+    OperationTypeDefinitionType(OperationTypeDefinitionPath<'a>),
 }
 
 impl<'a> ResolvePosition<'a> for Identifier {
@@ -1142,7 +1155,18 @@ impl<'a> ResolvePosition<'a> for TypeSystemDefinition {
             TypeSystemDefinition::EnumTypeExtension(enum_type_ext) => {
                 enum_type_ext.resolve(self.path(parent), position)
             }
-            _ => panic!("Unknown path"),
+            TypeSystemDefinition::SchemaDefinition(schema) => {
+                schema.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::SchemaExtension(schema_ext) => {
+                schema_ext.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::ScalarTypeDefinition(scalar) => {
+                scalar.resolve(self.path(parent), position)
+            }
+            TypeSystemDefinition::ScalarTypeExtension(scalar_ext) => {
+                scalar_ext.resolve(self.path(parent), position)
+            }
         }
     }
 
@@ -1169,7 +1193,10 @@ impl<'a> ResolvePosition<'a> for TypeSystemDefinition {
             TypeSystemDefinition::EnumTypeExtension(enum_type_ext) => {
                 enum_type_ext.contains(position)
             }
-            _ => false,
+            TypeSystemDefinition::SchemaDefinition(schema) => schema.contains(position),
+            TypeSystemDefinition::SchemaExtension(schema_ext) => schema_ext.contains(position),
+            TypeSystemDefinition::ScalarTypeDefinition(scalar) => scalar.contains(position),
+            TypeSystemDefinition::ScalarTypeExtension(scalar_ext) => scalar_ext.contains(position),
         }
     }
 }
@@ -1611,6 +1638,128 @@ impl<'a> ResolvePosition<'a> for EnumTypeExtension {
         }
 
         ResolutionPath::EnumTypeExtension(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type SchemaDefinitionPath<'a> = Path<&'a SchemaDefinition, SchemaDefinitionParent<'a>>;
+pub type SchemaDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for SchemaDefinition {
+    type Parent = SchemaDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        for operation_type in &self.operation_types.items {
+            if operation_type.contains(position) {
+                return operation_type.resolve(
+                    OperationTypeDefinitionParent::SchemaDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
+
+        ResolutionPath::SchemaDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type SchemaExtensionPath<'a> = Path<&'a SchemaExtension, SchemaExtensionParent<'a>>;
+pub type SchemaExtensionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for SchemaExtension {
+    type Parent = SchemaExtensionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if let Some(operation_types) = &self.operation_types {
+            for operation_type in &operation_types.items {
+                if operation_type.contains(position) {
+                    return operation_type.resolve(
+                        OperationTypeDefinitionParent::SchemaExtension(self.path(parent)),
+                        position,
+                    );
+                }
+            }
+        }
+
+        ResolutionPath::SchemaExtension(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type OperationTypeDefinitionPath<'a> =
+    Path<&'a OperationTypeDefinition, OperationTypeDefinitionParent<'a>>;
+#[derive(Debug)]
+pub enum OperationTypeDefinitionParent<'a> {
+    SchemaDefinition(SchemaDefinitionPath<'a>),
+    SchemaExtension(SchemaExtensionPath<'a>),
+}
+
+impl<'a> ResolvePosition<'a> for OperationTypeDefinition {
+    type Parent = OperationTypeDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.type_.contains(position) {
+            return self.type_.resolve(
+                IdentParent::OperationTypeDefinitionType(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::OperationTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type ScalarTypeDefinitionPath<'a> =
+    Path<&'a ScalarTypeDefinition, ScalarTypeDefinitionParent<'a>>;
+pub type ScalarTypeDefinitionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for ScalarTypeDefinition {
+    type Parent = ScalarTypeDefinitionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::ScalarTypeDefinitionName(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::ScalarTypeDefinition(self.path(parent))
+    }
+
+    fn contains(&'a self, position: Span) -> bool {
+        self.span.contains(position)
+    }
+}
+
+pub type ScalarTypeExtensionPath<'a> = Path<&'a ScalarTypeExtension, ScalarTypeExtensionParent<'a>>;
+pub type ScalarTypeExtensionParent<'a> = TypeSystemDefinitionPath<'a>;
+
+impl<'a> ResolvePosition<'a> for ScalarTypeExtension {
+    type Parent = ScalarTypeExtensionParent<'a>;
+
+    fn resolve(&'a self, parent: Self::Parent, position: Span) -> ResolutionPath<'a> {
+        if self.name.contains(position) {
+            return self.name.resolve(
+                IdentParent::ScalarTypeExtensionName(self.path(parent)),
+                position,
+            );
+        }
+
+        ResolutionPath::ScalarTypeExtension(self.path(parent))
     }
 
     fn contains(&'a self, position: Span) -> bool {

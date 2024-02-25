@@ -1126,10 +1126,12 @@ impl InMemorySchema {
     ) -> DiagnosticsResult<()> {
         match definition {
             TypeSystemDefinition::SchemaDefinition(SchemaDefinition {
-                operation_types,
-                directives: _directives,
+                operation_types, ..
             }) => {
-                for OperationTypeDefinition { operation, type_ } in &operation_types.items {
+                for OperationTypeDefinition {
+                    operation, type_, ..
+                } in &operation_types.items
+                {
                     let operation_id = self.build_object_id(type_.value)?;
                     match operation {
                         OperationType::Query => {
@@ -1364,6 +1366,7 @@ impl InMemorySchema {
             TypeSystemDefinition::ScalarTypeDefinition(ScalarTypeDefinition {
                 name,
                 directives,
+                ..
             }) => {
                 let directives = self.build_directive_values(directives);
                 self.scalars.push(Scalar {
