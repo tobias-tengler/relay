@@ -12,7 +12,9 @@ use graphql_ir::FragmentDefinitionName;
 use graphql_syntax::ExecutableDocument;
 use graphql_syntax::SchemaDocument;
 use intern::string_key::StringKey;
-use log::info;
+use resolution_path::ConstantEnumPath;
+use resolution_path::ConstantValuePath;
+use resolution_path::ConstantValueRoot;
 use resolution_path::IdentParent;
 use resolution_path::IdentPath;
 use resolution_path::LinkedFieldPath;
@@ -83,6 +85,24 @@ pub fn get_schema_definition_description(
         }) => Ok(DefinitionDescription::Directive {
             directive_name: directive_name.value,
         }),
+        ResolutionPath::ConstantEnum(ConstantEnumPath {
+            inner: enum_value,
+            parent: ConstantValuePath { inner: _, parent },
+        }) => {
+            let constant_value_root = parent.find_constant_value_root();
+
+            match constant_value_root {
+                ConstantValueRoot::InputValueDefinition(input_value_definition_path) => {
+                    let enum_name = input_value_definition_path.inner.type_.inner().name.value;
+
+                    Ok(DefinitionDescription::EnumValue {
+                        enum_name,
+                        enum_value: enum_value.value,
+                    })
+                }
+                _ => Err(LSPRuntimeError::ExpectedError),
+            }
+        }
         _ => Err(LSPRuntimeError::ExpectedError),
     }
 }
@@ -94,7 +114,6 @@ pub fn get_graphql_definition_description(
 ) -> LSPRuntimeResult<DefinitionDescription> {
     let node_path = document.resolve((), position_span);
 
-    info!("node_path: {:?}", node_path);
     match node_path {
         ResolutionPath::Ident(IdentPath {
             inner: fragment_name,
@@ -119,12 +138,6 @@ pub fn get_graphql_definition_description(
                 }),
         }) => resolve_field(field_name.value, selection_path.parent, schema),
         ResolutionPath::Ident(IdentPath {
-            inner: directive_name,
-            parent: IdentParent::DirectiveName(_),
-        }) => Ok(DefinitionDescription::Directive {
-            directive_name: directive_name.value,
-        }),
-        ResolutionPath::Ident(IdentPath {
             inner: _,
             parent:
                 IdentParent::TypeConditionType(TypeConditionPath {
@@ -134,6 +147,30 @@ pub fn get_graphql_definition_description(
         }) => Ok(DefinitionDescription::Type {
             type_name: type_condition.type_.value,
         }),
+        ResolutionPath::Ident(IdentPath {
+            inner: directive_name,
+            parent: IdentParent::DirectiveName(_),
+        }) => Ok(DefinitionDescription::Directive {
+            directive_name: directive_name.value,
+        }),
+        ResolutionPath::ConstantEnum(ConstantEnumPath {
+            inner: enum_value,
+            parent: ConstantValuePath { inner: _, parent },
+        }) => {
+            let constant_value_root = parent.find_constant_value_root();
+
+            match constant_value_root {
+                ConstantValueRoot::VariableDefinition(variable_definition_path) => {
+                    let enum_name = variable_definition_path.inner.type_.inner().name.value;
+
+                    Ok(DefinitionDescription::EnumValue {
+                        enum_name,
+                        enum_value: enum_value.value,
+                    })
+                }
+                _ => Err(LSPRuntimeError::ExpectedError),
+            }
+        }
         _ => Err(LSPRuntimeError::ExpectedError),
     }
 }

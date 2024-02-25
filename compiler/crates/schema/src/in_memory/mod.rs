@@ -1349,7 +1349,10 @@ impl InMemorySchema {
                         .items
                         .iter()
                         .map(|enum_def| EnumValue {
-                            value: enum_def.name.value,
+                            value: WithLocation::new(
+                                Location::new(*location_key, enum_def.name.span),
+                                enum_def.name.value,
+                            ),
                             directives: self.build_directive_values(&enum_def.directives),
                         })
                         .collect()
@@ -1513,7 +1516,10 @@ impl InMemorySchema {
                                 .items
                                 .iter()
                                 .map(|enum_def| EnumValue {
-                                    value: enum_def.name.value,
+                                    value: WithLocation::new(
+                                        Location::new(*location_key, enum_def.name.span),
+                                        enum_def.name.value,
+                                    ),
                                     directives: self.build_directive_values(&enum_def.directives),
                                 })
                                 .collect::<Vec<_>>();
@@ -1676,7 +1682,11 @@ impl InMemorySchema {
                     Ok(Argument {
                         name: ArgumentName(arg_def.name.value),
                         type_: self.build_input_object_reference(&arg_def.type_)?,
-                        default_value: arg_def.default_value.clone(),
+                        default_value: if let Some(default_value) = &arg_def.default_value {
+                            Some(default_value.value.clone())
+                        } else {
+                            None
+                        },
                         description: None,
                         directives: self.build_directive_values(&arg_def.directives),
                     })

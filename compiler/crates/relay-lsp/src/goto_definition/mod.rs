@@ -54,6 +54,10 @@ pub enum DefinitionDescription {
     Directive {
         directive_name: StringKey,
     },
+    EnumValue {
+        enum_name: StringKey,
+        enum_value: StringKey,
+    },
 }
 
 /// Resolve a GotoDefinitionRequest to a GotoDefinitionResponse
@@ -114,6 +118,10 @@ pub fn on_goto_definition(
         DefinitionDescription::Directive { directive_name } => {
             locate_directive_definition(directive_name, &schema, &root_dir)?
         }
+        DefinitionDescription::EnumValue {
+            enum_name,
+            enum_value,
+        } => locate_enum_value_definition(enum_name, enum_value, &schema, &root_dir)?,
     };
 
     // For some lsp-clients, such as clients relying on org.eclipse.lsp4j,
@@ -157,6 +165,34 @@ fn locate_directive_definition(
                 .map(GotoDefinitionResponse::Scalar)
         })
         .ok_or(LSPRuntimeError::ExpectedError)?
+}
+
+fn locate_enum_value_definition(
+    enum_name: StringKey,
+    enum_value: StringKey,
+    schema: &Arc<SDLSchema>,
+    root_dir: &std::path::Path,
+) -> Result<GotoDefinitionResponse, LSPRuntimeError> {
+    let enum_ = schema.get_type(enum_name);
+
+    // TODO: can this be done better?
+    match enum_ {
+        Some(Type::Enum(enum_id)) => {
+            let enum_ = schema.enum_(enum_id);
+
+            enum_
+                .values
+                .iter()
+                .find(|value| value.value.item == enum_value)
+                .map(|value| value.value.location)
+                .map(|schema_location| {
+                    transform_relay_location_to_lsp_location(root_dir, schema_location)
+                        .map(GotoDefinitionResponse::Scalar)
+                })
+                .ok_or(LSPRuntimeError::ExpectedError)?
+        }
+        _ => Err(LSPRuntimeError::ExpectedError),
+    }
 }
 
 fn locate_type_definition(

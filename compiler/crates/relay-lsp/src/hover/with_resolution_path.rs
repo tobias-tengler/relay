@@ -37,6 +37,7 @@ use resolution_path::ConstantStringPath;
 use resolution_path::ConstantValueParent;
 use resolution_path::ConstantValuePath;
 use resolution_path::ConstantValueRoot;
+use resolution_path::DefaultValueParent;
 use resolution_path::DefaultValuePath;
 use resolution_path::DirectivePath;
 use resolution_path::FragmentDefinitionPath;
@@ -173,10 +174,10 @@ fn get_hover_behavior_from_resolution_path<'a>(path: &'a ResolutionPath<'a>) -> 
         ResolutionPath::DefaultValue(DefaultValuePath {
             inner: _,
             parent:
-                VariableDefinitionPath {
+                DefaultValueParent::VariableDefinition(VariableDefinitionPath {
                     inner: variable_definition,
                     parent: _,
-                },
+                }),
         }) => HoverBehavior::VariableDefinition(variable_definition),
         ResolutionPath::VariableDefinition(VariableDefinitionPath {
             inner: variable_definition,
@@ -576,6 +577,8 @@ fn on_hover_constant_value<'a>(
             schema_documentation,
             content_consumer_type,
         ),
+        // TODO: Fix
+        ConstantValueRoot::InputValueDefinition(_) => None,
     }
 }
 

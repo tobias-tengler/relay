@@ -432,6 +432,25 @@ fn directive_definition_name() {
     })
 }
 
+#[test]
+fn directive_definition_argument_name() {
+    let source = r#"
+        directive @foo(bar: Baz) on FIELD
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::InputValueDefinitionName(InputValueDefinitionPath {
+                    inner: _,
+                    parent: InputValueDefinitionParent::DirectiveDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
 // ## Union Types
 
 #[test]
@@ -467,6 +486,27 @@ fn union_type_definition_member_name() {
 }
 
 #[test]
+fn union_type_definition_directive() {
+    let source = r#"
+        union Foo @bar = Baz
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::UnionTypeDefinition(_),
+                })
+            })
+        );
+    })
+}
+
+// ## Union Type Extensions
+
+#[test]
 fn union_type_extension_name() {
     let source = r#"
         extend union Foo = Bar | Baz
@@ -498,13 +538,32 @@ fn union_type_extension_member_name() {
     })
 }
 
+#[test]
+fn union_type_extension_directive() {
+    let source = r#"
+        extend union Foo @bar = Baz
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::UnionTypeExtension(_),
+                })
+            })
+        );
+    })
+}
+
 // ## Interface Types
 
 #[test]
 fn interface_type_definition_name() {
     let source = r#"
         interface Foo {
-            bar: String
+            bar: Baz
         }
         "#;
     test_schema_resolution(source, "Foo", |resolved| {
@@ -522,7 +581,7 @@ fn interface_type_definition_name() {
 fn interface_type_definition_implements_interface() {
     let source = r#"
         interface Foo implements Bar {
-            baz: String
+            baz: Qux
         }
         "#;
     test_schema_resolution(source, "Bar", |resolved| {
@@ -540,7 +599,7 @@ fn interface_type_definition_implements_interface() {
 fn interface_type_definition_field() {
     let source = r#"
         interface Foo {
-            bar: String
+            bar: Baz
         }
         "#;
     test_schema_resolution(source, "bar", |resolved| {
@@ -551,6 +610,27 @@ fn interface_type_definition_field() {
                 parent: IdentParent::FieldDefinitionName(FieldDefinitionPath {
                     inner: _,
                     parent: FieldDefinitionParent::InterfaceTypeDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn interface_type_definition_directive() {
+    let source = r#"
+        interface Foo @bar {
+            baz: Qux
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::InterfaceTypeDefinition(_),
                 }),
             })
         );
@@ -616,6 +696,27 @@ fn interface_type_extension_field() {
     })
 }
 
+#[test]
+fn interface_type_extension_directive() {
+    let source = r#"
+        extend interface Foo @bar {
+            baz: Qux
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::InterfaceTypeExtension(_),
+                }),
+            })
+        );
+    })
+}
+
 // ## Object Types
 
 #[test]
@@ -637,7 +738,7 @@ fn object_type_definition_name() {
 }
 
 #[test]
-fn object_type_definition_implemented_interface_name() {
+fn object_type_definition_implements_interface_name() {
     let source = r#"
         type Foo implements Node {
             bar: Baz
@@ -666,48 +767,30 @@ fn object_type_definition_field_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::FieldDefinitionName(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn object_type_definition_field_named_type() {
-    let source = r#"
-        type Foo {
-            bar: Baz
-        }
-        "#;
-    test_schema_resolution(source, "Baz", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn object_type_definition_field_non_null_type() {
-    let source = r#"
-        type Foo {
-            bar: Baz!
-        }
-        "#;
-    test_schema_resolution(source, "Baz!", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                parent: IdentParent::FieldDefinitionName(FieldDefinitionPath {
                     inner: _,
-                    parent: TypeAnnotationPath {
-                        inner: _,
-                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
-                    }
+                    parent: FieldDefinitionParent::ObjectTypeDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_definition_directive() {
+    let source = r#"
+        type Foo @bar {
+            baz: Qux
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::ObjectTypeDefinition(_),
                 }),
             })
         );
@@ -735,7 +818,7 @@ fn object_type_extension_name() {
 }
 
 #[test]
-fn object_type_extension_implemented_interface_name() {
+fn object_type_extension_implements_interface_name() {
     let source = r#"
         extend type Foo implements Node {
             bar: Baz
@@ -755,7 +838,7 @@ fn object_type_extension_implemented_interface_name() {
 #[test]
 fn object_type_extension_field_name() {
     let source = r#"
-        extend type Foo {
+        extension type Foo {
             bar: Baz
         }
         "#;
@@ -764,48 +847,30 @@ fn object_type_extension_field_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::FieldDefinitionName(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn object_type_extension_field_named_type() {
-    let source = r#"
-        extend type Foo {
-            bar: Baz
-        }
-        "#;
-    test_schema_resolution(source, "Baz", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn object_type_extension_field_non_null_type() {
-    let source = r#"
-        extend type Foo {
-            bar: Baz!
-        }
-        "#;
-    test_schema_resolution(source, "Baz!", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                parent: IdentParent::FieldDefinitionName(FieldDefinitionPath {
                     inner: _,
-                    parent: TypeAnnotationPath {
-                        inner: _,
-                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
-                    }
+                    parent: FieldDefinitionParent::ObjectTypeExtension(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn object_type_extension_directive() {
+    let source = r#"
+        extend type Foo @bar {
+            baz: Qux
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::ObjectTypeExtension(_),
                 }),
             })
         );
@@ -844,48 +909,30 @@ fn input_object_type_definition_field_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::InputValueDefinitionName(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn input_object_type_definition_field_named_type() {
-    let source = r#"
-        input Foo {
-            bar: Baz
-        }
-        "#;
-    test_schema_resolution(source, "Baz", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn input_object_type_definition_field_non_null_type() {
-    let source = r#"
-        input Foo {
-            bar: Baz!
-        }
-        "#;
-    test_schema_resolution(source, "Baz!", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                parent: IdentParent::InputValueDefinitionName(InputValueDefinitionPath {
                     inner: _,
-                    parent: TypeAnnotationPath {
-                        inner: _,
-                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
-                    }
+                    parent: InputValueDefinitionParent::InputObjectTypeDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_object_type_definition_directive() {
+    let source = r#"
+        input Foo @bar {
+            baz: Qux
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::InputObjectTypeDefinition(_),
                 }),
             })
         );
@@ -924,110 +971,30 @@ fn input_object_type_extension_field_name() {
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::InputValueDefinitionName(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn input_object_type_extension_field_named_type() {
-    let source = r#"
-        extend input Foo {
-            bar: Baz
-        }
-        "#;
-    test_schema_resolution(source, "Baz", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn input_object_type_extension_field_non_null_type() {
-    let source = r#"
-        extend input Foo {
-            bar: Baz!
-        }
-        "#;
-    test_schema_resolution(source, "Baz!", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                parent: IdentParent::InputValueDefinitionName(InputValueDefinitionPath {
                     inner: _,
-                    parent: TypeAnnotationPath {
-                        inner: _,
-                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
-                    }
+                    parent: InputValueDefinitionParent::InputObjectTypeExtension(_),
                 }),
             })
         );
     })
 }
 
-// ## Input Value Definitions
-
 #[test]
-fn input_value_definition_name() {
+fn input_object_type_extension_directive() {
     let source = r#"
-        type Foo {
-            bar(baz: Qux): Quux
+        extend input Foo @bar {
+            baz: Qux
         }
         "#;
-    test_schema_resolution(source, "baz", |resolved| {
+    test_schema_resolution(source, "bar", |resolved| {
         assert_matches!(
             resolved,
             ResolutionPath::Ident(IdentPath {
                 inner: _,
-                parent: IdentParent::InputValueDefinitionName(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn input_value_definition_named_type() {
-    let source = r#"
-        type Foo {
-            bar(baz: Qux): Quux
-        }
-        "#;
-    test_schema_resolution(source, "Qux", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn input_value_definition_non_null_type() {
-    let source = r#"
-        type Foo {
-            bar(baz: Qux!): Quux
-        }
-        "#;
-    test_schema_resolution(source, "Qux!", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
                     inner: _,
-                    parent: TypeAnnotationPath {
-                        inner: _,
-                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
-                    }
+                    parent: ConstantDirectiveParent::InputObjectTypeExtension(_),
                 }),
             })
         );
@@ -1056,6 +1023,27 @@ fn enum_definition_name() {
 }
 
 #[test]
+fn enum_definition_value() {
+    let source = r#"
+        enum Foo {
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "BAZ", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::EnumValueDefinitionName(EnumValueDefinitionPath {
+                    inner: _,
+                    parent: EnumValueDefinitionParent::EnumTypeDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
 fn enum_definition_directive() {
     let source = r#"
         enum Foo @bar {
@@ -1070,45 +1058,6 @@ fn enum_definition_directive() {
                 parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
                     inner: _,
                     parent: ConstantDirectiveParent::EnumTypeDefinition(_),
-                }),
-            })
-        );
-    })
-}
-
-#[test]
-fn enum_definition_value() {
-    let source = r#"
-        enum Foo {
-            BAZ
-        }
-        "#;
-    test_schema_resolution(source, "BAZ", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::EnumValueDefinitionName(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn enum_definition_value_directive() {
-    let source = r#"
-       enum Foo {
-            BAZ @bar
-        }
-        "#;
-    test_schema_resolution(source, "bar", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
-                    inner: _,
-                    parent: ConstantDirectiveParent::EnumValueDefinition(_),
                 }),
             })
         );
@@ -1137,6 +1086,27 @@ fn enum_extension_name() {
 }
 
 #[test]
+fn enum_extension_value() {
+    let source = r#"
+        extend enum Foo {
+            BAZ
+        }
+        "#;
+    test_schema_resolution(source, "BAZ", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::EnumValueDefinitionName(EnumValueDefinitionPath {
+                    inner: _,
+                    parent: EnumValueDefinitionParent::EnumTypeExtension(_),
+                }),
+            })
+        );
+    })
+}
+
+#[test]
 fn enum_extension_directive() {
     let source = r#"
         extend enum Foo @bar {
@@ -1151,45 +1121,6 @@ fn enum_extension_directive() {
                 parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
                     inner: _,
                     parent: ConstantDirectiveParent::EnumTypeExtension(_),
-                }),
-            })
-        );
-    })
-}
-
-#[test]
-fn enum_extension_value() {
-    let source = r#"
-        extend enum Foo {
-            BAZ
-        }
-        "#;
-    test_schema_resolution(source, "BAZ", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::EnumValueDefinitionName(_),
-            })
-        );
-    })
-}
-
-#[test]
-fn enum_extension_value_directive() {
-    let source = r#"
-        extend enum Foo {
-            BAZ @bar
-        }
-        "#;
-    test_schema_resolution(source, "bar", |resolved| {
-        assert_matches!(
-            resolved,
-            ResolutionPath::Ident(IdentPath {
-                inner: _,
-                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
-                    inner: _,
-                    parent: ConstantDirectiveParent::EnumValueDefinition(_),
                 }),
             })
         );
@@ -1358,8 +1289,233 @@ fn schema_extension_directive() {
     })
 }
 
-// TODOS:
-// - directives for all
-// - default input value
-// - interface implementing interface
-// - constant directive arguments
+// ## Field Definition
+
+#[test]
+fn field_definition_named_type() {
+    let source = r#"
+        type Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn field_definition_non_null_type() {
+    let source = r#"
+        type Foo {
+            bar: Baz!
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
+                    }
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn field_definition_list_type() {
+    let source = r#"
+        type Foo {
+            bar: [Baz]
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::ListTypeAnnotation(_),
+                    }
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn field_definition_directive() {
+    let source = r#"
+        type Foo {
+            bar: Baz @qux
+        }
+        "#;
+    test_schema_resolution(source, "qux", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::FieldDefinition(_)
+                }),
+            })
+        );
+    })
+}
+
+// TODO: arguments
+
+// ## Input Value Definition
+
+#[test]
+fn input_value_definition_named_type() {
+    let source = r#"
+        input Foo {
+            bar: Baz
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(_),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_value_definition_non_null_type() {
+    let source = r#"
+        input Foo {
+            bar: Baz!
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::NonNullTypeAnnotation(_),
+                    }
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_value_definition_list_type() {
+    let source = r#"
+        input Foo {
+            bar: [Baz]
+        }
+        "#;
+    test_schema_resolution(source, "Baz", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::NamedTypeAnnotation(NamedTypeAnnotationPath {
+                    inner: _,
+                    parent: TypeAnnotationPath {
+                        inner: _,
+                        parent: TypeAnnotationParent::ListTypeAnnotation(_),
+                    }
+                }),
+            })
+        );
+    })
+}
+
+#[test]
+fn input_value_definition_default_value() {
+    let source = r#"
+        input Foo {
+            bar: Baz = 5
+        }
+        "#;
+    test_schema_resolution(source, "5", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::ConstantInt(ConstantIntPath {
+                inner: _,
+                parent: ConstantValuePath {
+                    inner: _,
+                    parent: ConstantValueParent::DefaultValue(DefaultValuePath {
+                        inner: _,
+                        parent: DefaultValueParent::InputValueDefinition(_),
+                    })
+                }
+            })
+        );
+    })
+}
+
+#[test]
+fn input_value_definition_directive() {
+    let source = r#"
+        input Foo {
+            bar: Baz @qux
+        }
+        "#;
+    test_schema_resolution(source, "qux", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::InputValueDefinition(_)
+                }),
+            })
+        );
+    })
+}
+
+// ## Enum Value Definition
+
+#[test]
+fn enum_value_definition_directive() {
+    let source = r#"
+       enum Foo {
+            BAZ @bar
+        }
+        "#;
+    test_schema_resolution(source, "bar", |resolved| {
+        assert_matches!(
+            resolved,
+            ResolutionPath::Ident(IdentPath {
+                inner: _,
+                parent: IdentParent::ConstantDirectiveName(ConstantDirectivePath {
+                    inner: _,
+                    parent: ConstantDirectiveParent::EnumValueDefinition(_),
+                }),
+            })
+        );
+    })
+}
+
+// ## Constant Directive
+
+// - arguments

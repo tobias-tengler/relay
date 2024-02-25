@@ -326,7 +326,10 @@ impl<'a> ResolvePosition<'a> for VariableDefinition {
 
         if let Some(default) = &self.default_value {
             if default.contains(position) {
-                return default.resolve(self.path(parent), position);
+                return default.resolve(
+                    DefaultValueParent::VariableDefinition(self.path(parent)),
+                    position,
+                );
             }
         }
 
@@ -347,7 +350,11 @@ impl<'a> ResolvePosition<'a> for VariableDefinition {
 }
 
 pub type DefaultValuePath<'a> = Path<&'a DefaultValue, DefaultValueParent<'a>>;
-pub type DefaultValueParent<'a> = VariableDefinitionPath<'a>;
+#[derive(Debug)]
+pub enum DefaultValueParent<'a> {
+    VariableDefinition(VariableDefinitionPath<'a>),
+    InputValueDefinition(InputValueDefinitionPath<'a>),
+}
 
 impl<'a> ResolvePosition<'a> for DefaultValue {
     type Parent = DefaultValueParent<'a>;
@@ -1098,8 +1105,6 @@ impl<'a> ResolvePosition<'a> for List<Argument> {
     }
 }
 
-// --------------------------------------------------------------------------------------
-
 pub type SchemaDocumentPath<'a> = Path<&'a SchemaDocument, ()>;
 
 impl<'a> ResolvePosition<'a> for SchemaDocument {
@@ -1698,18 +1703,14 @@ impl<'a> ResolvePosition<'a> for InputValueDefinition {
             );
         }
 
-        // TODO: Default value
-
-        // if let Some(default_value) = &self.default_value {
-        //     if default_value.contains(position) {
-        //         return default_value.resolve(
-        //             ConstantValueParent::DefaultValue(DefaultValueParent::InputValueDefinition(
-        //                 self.path(parent),
-        //             )),
-        //             position,
-        //         );
-        //     }
-        // }
+        if let Some(default_value) = &self.default_value {
+            if default_value.contains(position) {
+                return default_value.resolve(
+                    DefaultValueParent::InputValueDefinition(self.path(parent)),
+                    position,
+                );
+            }
+        }
 
         for directive in self.directives.iter() {
             if directive.contains(position) {
@@ -2038,6 +2039,8 @@ impl<'a> ResolvePosition<'a> for ConstantDirective {
                 position,
             );
         }
+
+        // TODO: Implement
 
         // if let Some(arguments) = &self.arguments {
         //     for argument in &arguments.items {

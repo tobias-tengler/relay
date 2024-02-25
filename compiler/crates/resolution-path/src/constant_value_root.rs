@@ -12,7 +12,11 @@ impl<'a> ConstantValueParent<'a> {
         match self {
             ConstantValueParent::DefaultValue(DefaultValuePath {
                 inner: _,
-                parent: variable_definition_path,
+                parent: DefaultValueParent::InputValueDefinition(input_value_definition_path),
+            }) => ConstantValueRoot::InputValueDefinition(input_value_definition_path),
+            ConstantValueParent::DefaultValue(DefaultValuePath {
+                inner: _,
+                parent: DefaultValueParent::VariableDefinition(variable_definition_path),
             }) => ConstantValueRoot::VariableDefinition(variable_definition_path),
             ConstantValueParent::Value(ValuePath {
                 inner: _,
@@ -65,6 +69,7 @@ impl<'a> ValueParent<'a> {
 #[derive(Debug)]
 pub enum ConstantValueRoot<'a> {
     VariableDefinition(&'a VariableDefinitionPath<'a>),
+    InputValueDefinition(&'a InputValueDefinitionPath<'a>),
     Argument(&'a ArgumentPath<'a>),
 }
 

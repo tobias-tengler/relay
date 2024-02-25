@@ -735,7 +735,8 @@ trait ResolverTypeDefinitionIr: ResolverIr {
                     .map(|arg| InputValueDefinition {
                         name: arg.name.clone(),
                         type_: arg.type_.clone(),
-                        default_value: arg.default_value.clone(),
+                        // TODO: Fix
+                        default_value: None,
                         directives: vec![],
                         // TODO: Fix
                         span: Span::empty(),
