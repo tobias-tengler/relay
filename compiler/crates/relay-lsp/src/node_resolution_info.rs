@@ -229,6 +229,11 @@ fn build_node_resolution_info_from_selections(
                 let LinkedField {
                     name, selections, ..
                 } = node;
+
+                node_resolution_info
+                    .type_path
+                    .add_type(TypePathItem::LinkedField { name: name.value });
+
                 if build_node_resolution_info_for_argument(
                     name.value,
                     &node.arguments,
@@ -237,9 +242,6 @@ fn build_node_resolution_info_from_selections(
                 )
                 .is_none()
                 {
-                    node_resolution_info
-                        .type_path
-                        .add_type(TypePathItem::LinkedField { name: name.value });
                     build_node_resolution_info_from_selections(
                         selections,
                         position_span,
@@ -283,6 +285,10 @@ fn build_node_resolution_info_from_selections(
             Selection::ScalarField(node) => {
                 let ScalarField { name, .. } = node;
 
+                node_resolution_info
+                    .type_path
+                    .add_type(TypePathItem::ScalarField { name: name.value });
+
                 if build_node_resolution_info_for_argument(
                     name.value,
                     &node.arguments,
@@ -292,9 +298,6 @@ fn build_node_resolution_info_from_selections(
                 .is_none()
                 {
                     node_resolution_info.kind = NodeKind::FieldName;
-                    node_resolution_info
-                        .type_path
-                        .add_type(TypePathItem::ScalarField { name: name.value });
                 }
             }
         }

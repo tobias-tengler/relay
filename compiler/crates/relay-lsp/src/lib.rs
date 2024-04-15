@@ -65,11 +65,13 @@ pub enum Feature {
 }
 
 #[allow(clippy::large_enum_variant)]
+#[derive(Debug)]
 pub enum FeatureResolutionInfo {
     GraphqlNode(NodeResolutionInfo),
     DocblockNode(DocblockNode),
 }
 
+#[derive(Debug)]
 pub struct DocblockNode {
     resolution_info: DocblockResolutionInfo,
     ir: DocblockIr,

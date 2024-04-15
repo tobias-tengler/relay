@@ -749,6 +749,7 @@ dependencies = [
  "indexmap 2.2.2",
  "intern",
  "lazy_static",
+ "log",
  "once_cell",
  "relay-test-schema",
  "schema",

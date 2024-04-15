@@ -423,10 +423,11 @@ impl<'schema, 'signatures, 'options> Builder<'schema, 'signatures, 'options> {
                 .used_variables
                 .iter()
                 .map(|(undefined_variable, usage)| {
-                    Diagnostic::error(
-                        ValidationMessage::ExpectedOperationVariableToBeDefined(
-                            *undefined_variable,
-                        ),
+                    Diagnostic::error_with_data(
+                        ValidationMessageWithData::ExpectedOperationVariableToBeDefined {
+                            variable_name: *undefined_variable,
+                            type_: self.schema.get_type_string(&usage.type_),
+                        },
                         self.location.with_span(usage.span),
                     )
                 })

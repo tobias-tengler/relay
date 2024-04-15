@@ -149,9 +149,6 @@ pub enum ValidationMessage {
         next_type: String,
     },
 
-    #[error("Expected variable `${0}` to be defined on the operation")]
-    ExpectedOperationVariableToBeDefined(VariableName),
-
     #[error(
         "Expected argument definition to have an input type (scalar, enum, or input object), found type '{0}'"
     )]
@@ -584,6 +581,12 @@ pub enum ValidationMessageWithData {
         argument_name: StringKey,
         suggestions: Vec<StringKey>,
     },
+
+    #[error("Expected variable `${variable_name}` to be defined on the operation")]
+    ExpectedOperationVariableToBeDefined {
+        variable_name: VariableName,
+        type_: String,
+    },
 }
 
 impl WithDiagnosticData for ValidationMessageWithData {
@@ -599,6 +602,10 @@ impl WithDiagnosticData for ValidationMessageWithData {
             ValidationMessageWithData::ExpectedSelectionsOnObjectField { field_name, .. } => {
                 vec![Box::new(format!("{} {{ }}", field_name))]
             }
+            ValidationMessageWithData::ExpectedOperationVariableToBeDefined {
+                variable_name,
+                type_,
+            } => vec![Box::new(format!("${}: {}", variable_name, type_))],
         }
     }
 }
