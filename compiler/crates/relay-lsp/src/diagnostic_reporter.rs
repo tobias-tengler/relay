@@ -210,7 +210,6 @@ impl DiagnosticReporter {
             .collect::<Vec<_>>();
 
         Diagnostic {
-            code: None,
             data: get_diagnostics_data(diagnostic),
             message: diagnostic.message().to_string(),
             range: text_source.to_span_range(diagnostic.location().span()),

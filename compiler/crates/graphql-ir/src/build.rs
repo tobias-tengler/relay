@@ -426,7 +426,7 @@ impl<'schema, 'signatures, 'options> Builder<'schema, 'signatures, 'options> {
                     Diagnostic::error_with_data(
                         ValidationMessageWithData::ExpectedOperationVariableToBeDefined {
                             variable_name: *undefined_variable,
-                            type_: self.schema.get_type_string(&usage.type_),
+                            variable_type: self.schema.get_type_string(&usage.type_),
                         },
                         self.location.with_span(usage.span),
                     )

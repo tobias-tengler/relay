@@ -420,12 +420,6 @@ pub enum ValidationMessage {
     )]
     UnusedIgnoreUnusedVariablesDirective { operation_name: StringKey },
 
-    #[error("Operation '{operation_name}' references undefined variable{variables_string}.")]
-    GlobalVariables {
-        operation_name: StringKey,
-        variables_string: String,
-    },
-
     #[error("Subscription '{subscription_name}' must have a single selection")]
     GenerateSubscriptionNameSingleSelectionItem { subscription_name: StringKey },
 
@@ -585,7 +579,14 @@ pub enum ValidationMessageWithData {
     #[error("Expected variable `${variable_name}` to be defined on the operation")]
     ExpectedOperationVariableToBeDefined {
         variable_name: VariableName,
-        type_: String,
+        variable_type: String,
+    },
+
+    #[error("Operation '{operation_name}' references undefined variable '${variable_name}'.")]
+    UndefinedVariableReferenced {
+        operation_name: StringKey,
+        variable_name: VariableName,
+        variable_type: String,
     },
 }
 
@@ -604,8 +605,19 @@ impl WithDiagnosticData for ValidationMessageWithData {
             }
             ValidationMessageWithData::ExpectedOperationVariableToBeDefined {
                 variable_name,
-                type_,
-            } => vec![Box::new(format!("${}: {}", variable_name, type_))],
+                variable_type,
+            } => vec![
+                Box::new(variable_name.to_owned()),
+                Box::new(variable_type.to_owned()),
+            ],
+            ValidationMessageWithData::UndefinedVariableReferenced {
+                variable_name,
+                variable_type,
+                ..
+            } => vec![
+                Box::new(variable_name.to_owned()),
+                Box::new(variable_type.to_owned()),
+            ],
         }
     }
 }
