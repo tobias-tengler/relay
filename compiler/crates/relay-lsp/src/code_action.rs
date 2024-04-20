@@ -21,11 +21,13 @@ use docblock_shared::ARGUMENT_DEFINITIONS;
 use graphql_syntax::ExecutableDefinition;
 use graphql_syntax::ExecutableDocument;
 use intern::Lookup;
+use itertools::Itertools;
 use lsp_types::request::CodeActionRequest;
 use lsp_types::request::Request;
 use lsp_types::CodeAction;
 use lsp_types::CodeActionOrCommand;
 use lsp_types::Diagnostic;
+use lsp_types::NumberOrString;
 use lsp_types::Position;
 use lsp_types::Range;
 use lsp_types::TextDocumentPositionParams;
@@ -93,80 +95,62 @@ fn get_code_actions_from_diagnostic(
     location: &Location,
     state: &impl GlobalState,
 ) -> Option<Vec<CodeActionOrCommand>> {
-    let definition = document.find_definition(position_span)?;
+    match diagnostic {
+        Diagnostic {
+            // TODO: Extract into proper codes
+            code: Some(NumberOrString::Number(1) | NumberOrString::Number(2)),
+            data: Some(Value::Array(array_data)),
+            ..
+        } => {
+            let definition = document.find_definition(position_span)?;
 
-    let _code_actions = match definition {
-        ExecutableDefinition::Operation(operation) => {
-            if let Some(Value::Array(array_data)) = diagnostic.data {
-                match &array_data[..] {
-                    [Value::String(variable_name), Value::String(variable_type)] => {
-                        vec![
-                            create_operation_variable_code_action(
-                                operation,
-                                variable_name,
-                                variable_type,
-                                location,
-                                state,
-                                url.to_owned(),
-                            )
-                            .unwrap(),
-                        ]
+            match &array_data[..] {
+                [Value::String(variable_name), Value::String(variable_type)] => match definition {
+                    ExecutableDefinition::Operation(operation) => {
+                        create_operation_variable_code_action(
+                            operation,
+                            variable_name,
+                            variable_type,
+                            location,
+                            state,
+                            url.to_owned(),
+                        )
+                        .and_then(|code_action| Some(vec![code_action]))
                     }
-                    _ => vec![],
-                }
-            } else {
-                vec![]
+                    ExecutableDefinition::Fragment(fragment) => {
+                        create_fragment_argument_code_action(
+                            fragment,
+                            variable_name,
+                            variable_type,
+                            location,
+                            state,
+                            url.to_owned(),
+                        )
+                        .and_then(|code_action| Some(vec![code_action]))
+                    }
+                },
+                _ => None,
             }
         }
-        ExecutableDefinition::Fragment(fragment) => {
-            if let Some(Value::Array(array_data)) = diagnostic.data {
-                match &array_data[..] {
-                    [Value::String(variable_name), Value::String(variable_type)] => {
-                        vec![
-                            create_fragment_argument_code_action(
-                                fragment,
-                                variable_name,
-                                variable_type,
-                                location,
-                                state,
-                                url.to_owned(),
-                            )
-                            .unwrap(),
-                        ]
-                    }
-                    _ => vec![],
-                }
-            } else {
-                vec![]
-            }
-        }
-    };
-
-    None
-
-    // match diagnostic {
-    //     Diagnostic {
-    //         data: Some(Value::Array(array_data)),
-    //         ..
-    //     } => match array_data[..] {
-    //         [] => None,
-    //         _ => array_data
-    //             .iter()
-    //             .filter_map(|item| match item {
-    //                 Value::String(suggestion) => Some(create_code_action(
-    //                     "Fix Error",
-    //                     suggestion.to_string(),
-    //                     url,
-    //                     diagnostic.range,
-    //                 )),
-    //                 _ => None,
-    //             })
-    //             .collect_vec()
-    //             .into(),
-    //     },
-
-    //     _ => None,
-    // }
+        Diagnostic {
+            data: Some(Value::Array(array_data)),
+            ..
+        } => Some(
+            array_data
+                .iter()
+                .filter_map(|item| match item {
+                    Value::String(suggestion) => Some(create_code_action(
+                        "Fix Error",
+                        suggestion.to_string(),
+                        url,
+                        diagnostic.range,
+                    )),
+                    _ => None,
+                })
+                .collect_vec(),
+        ),
+        _ => None,
+    }
 }
 
 struct FragmentAndOperationNames {
@@ -494,7 +478,7 @@ fn create_code_action(
 //     use lsp_types::Url;
 //     use serde_json::json;
 
-//     use crate::code_action::get_code_actions_from_diagnostics;
+//     use crate::code_action::get_code_actions_from_diagnostic;
 
 //     #[test]
 //     fn test_get_code_actions_from_diagnostics() {
@@ -514,7 +498,7 @@ fn create_code_action(
 //             ..Default::default()
 //         };
 //         let url = Url::parse("file://relay.js").unwrap();
-//         let code_actions = get_code_actions_from_diagnostics(&url, diagnostic);
+//         let code_actions = get_code_actions_from_diagnostic(&url, diagnostic);
 
 //         assert_eq!(
 //             code_actions
