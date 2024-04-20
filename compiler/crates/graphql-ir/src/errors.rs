@@ -530,6 +530,14 @@ pub enum ValidationMessage {
     ResolverInMutation,
 }
 
+#[derive(Clone, Debug)]
+pub struct ValidationDiagnosticCode;
+
+impl ValidationDiagnosticCode {
+    pub const EXPECTED_OPERATION_VARIABLE_TO_BE_DEFINED: i32 = 1;
+    pub const UNDEFINED_VARIABLE_REFERENCED: i32 = 2;
+}
+
 #[derive(
     Clone,
     Debug,

@@ -18,6 +18,7 @@ use create_name_suggestion::create_impactful_name;
 use create_name_suggestion::create_name_wrapper;
 use create_name_suggestion::DefinitionNameSuffix;
 use docblock_shared::ARGUMENT_DEFINITIONS;
+use graphql_ir::ValidationDiagnosticCode;
 use graphql_syntax::ExecutableDefinition;
 use graphql_syntax::ExecutableDocument;
 use intern::Lookup;
@@ -64,21 +65,14 @@ pub(crate) fn on_code_action(
         state.extract_executable_document_from_text(&text_document_position_params, 1)?;
 
     if let Some(diagnostic) = state.get_diagnostic_for_range(&uri, params.range) {
-        let code_actions = get_code_actions_from_diagnostic(
-            &uri,
-            diagnostic,
-            &document,
-            location.span(),
-            &location,
-            state,
-        );
+        let code_actions =
+            get_code_actions_from_diagnostic(&uri, diagnostic, &document, &location, state);
         if code_actions.is_some() {
             return Ok(code_actions);
         }
     }
 
     let path = document.resolve((), location.span());
-
     let definitions = state.resolve_executable_definitions(&uri)?;
     let used_definition_names = get_definition_names(&definitions);
 
@@ -91,18 +85,20 @@ fn get_code_actions_from_diagnostic(
     url: &Url,
     diagnostic: Diagnostic,
     document: &ExecutableDocument,
-    position_span: Span,
     location: &Location,
     state: &impl GlobalState,
 ) -> Option<Vec<CodeActionOrCommand>> {
     match diagnostic {
         Diagnostic {
-            // TODO: Extract into proper codes
-            code: Some(NumberOrString::Number(1) | NumberOrString::Number(2)),
+            code:
+                Some(NumberOrString::Number(
+                    ValidationDiagnosticCode::EXPECTED_OPERATION_VARIABLE_TO_BE_DEFINED
+                    | ValidationDiagnosticCode::UNDEFINED_VARIABLE_REFERENCED,
+                )),
             data: Some(Value::Array(array_data)),
             ..
         } => {
-            let definition = document.find_definition(position_span)?;
+            let definition = document.find_definition(location.span())?;
 
             match &array_data[..] {
                 [Value::String(variable_name), Value::String(variable_type)] => match definition {

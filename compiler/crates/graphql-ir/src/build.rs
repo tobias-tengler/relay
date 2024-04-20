@@ -49,6 +49,7 @@ use schema::Type;
 use schema::TypeReference;
 
 use crate::constants::ARGUMENT_DEFINITION;
+use crate::errors::ValidationDiagnosticCode;
 use crate::errors::ValidationMessage;
 use crate::errors::ValidationMessageWithData;
 use crate::ir::*;
@@ -423,7 +424,8 @@ impl<'schema, 'signatures, 'options> Builder<'schema, 'signatures, 'options> {
                 .used_variables
                 .iter()
                 .map(|(undefined_variable, usage)| {
-                    Diagnostic::error_with_data(
+                    Diagnostic::error_with_data_and_code(
+                        ValidationDiagnosticCode::EXPECTED_OPERATION_VARIABLE_TO_BE_DEFINED,
                         ValidationMessageWithData::ExpectedOperationVariableToBeDefined {
                             variable_name: *undefined_variable,
                             variable_type: self.schema.get_type_string(&usage.type_),

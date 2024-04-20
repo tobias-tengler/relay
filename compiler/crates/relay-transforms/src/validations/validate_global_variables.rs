@@ -11,6 +11,7 @@ use common::NamedItem;
 use graphql_ir::FragmentDefinition;
 use graphql_ir::OperationDefinition;
 use graphql_ir::Program;
+use graphql_ir::ValidationDiagnosticCode;
 use graphql_ir::ValidationMessageWithData;
 use graphql_ir::Validator;
 use itertools::Itertools;
@@ -68,7 +69,8 @@ impl Validator for ValidateGlobalVariables<'_> {
             return Err(undefined_variables
                 .iter()
                 .map(|variable| {
-                    Diagnostic::error_with_data(
+                    Diagnostic::error_with_data_and_code(
+                        ValidationDiagnosticCode::UNDEFINED_VARIABLE_REFERENCED,
                         ValidationMessageWithData::UndefinedVariableReferenced {
                             operation_name: operation.name.item.0,
                             variable_name: variable.name.item,
