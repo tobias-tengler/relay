@@ -12,8 +12,15 @@ fragment c on MaybeNode {
 import { FragmentRefs } from "relay-runtime";
 export type c$data = {
   readonly __typename: "Story";
-  readonly actorCount?: number | null | undefined;
-  readonly name?: string | null | undefined;
+  readonly actorCount: number | null | undefined;
+  readonly " $fragmentType": "c";
+} | {
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  readonly __typename: "%other";
+  readonly " $fragmentType": "c";
+} | {
+  readonly name: string | null | undefined;
   readonly " $fragmentType": "c";
 };
 export type c$key = {
