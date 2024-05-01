@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @generated SignedSource<<fd50a3d51a0a463eb51919b6c8aa53f8>>
+ * @generated SignedSource<<c07b1a525f8e6ac70fd7b9816e24eddb>>
  */
 
 mod generate_typescript;
@@ -83,6 +83,48 @@ async fn default_input() {
 }
 
 #[tokio::test]
+async fn fragment_on_interface_fields_on_root_and_typename_in_type_refinement() {
+    let input = include_str!("generate_typescript/fixtures/fragment_on_interface_fields_on_root_and_typename_in_type_refinement.graphql");
+    let expected = include_str!("generate_typescript/fixtures/fragment_on_interface_fields_on_root_and_typename_in_type_refinement.expected");
+    test_fixture(transform_fixture, file!(), "fragment_on_interface_fields_on_root_and_typename_in_type_refinement.graphql", "generate_typescript/fixtures/fragment_on_interface_fields_on_root_and_typename_in_type_refinement.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn fragment_on_interface_typename_in_type_refinement() {
+    let input = include_str!("generate_typescript/fixtures/fragment_on_interface_typename_in_type_refinement.graphql");
+    let expected = include_str!("generate_typescript/fixtures/fragment_on_interface_typename_in_type_refinement.expected");
+    test_fixture(transform_fixture, file!(), "fragment_on_interface_typename_in_type_refinement.graphql", "generate_typescript/fixtures/fragment_on_interface_typename_in_type_refinement.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn fragment_on_interface_typename_on_root() {
+    let input = include_str!("generate_typescript/fixtures/fragment_on_interface_typename_on_root.graphql");
+    let expected = include_str!("generate_typescript/fixtures/fragment_on_interface_typename_on_root.expected");
+    test_fixture(transform_fixture, file!(), "fragment_on_interface_typename_on_root.graphql", "generate_typescript/fixtures/fragment_on_interface_typename_on_root.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn fragment_on_union_typename_in_all_type_refinements() {
+    let input = include_str!("generate_typescript/fixtures/fragment_on_union_typename_in_all_type_refinements.graphql");
+    let expected = include_str!("generate_typescript/fixtures/fragment_on_union_typename_in_all_type_refinements.expected");
+    test_fixture(transform_fixture, file!(), "fragment_on_union_typename_in_all_type_refinements.graphql", "generate_typescript/fixtures/fragment_on_union_typename_in_all_type_refinements.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn fragment_on_union_typename_in_type_refinement() {
+    let input = include_str!("generate_typescript/fixtures/fragment_on_union_typename_in_type_refinement.graphql");
+    let expected = include_str!("generate_typescript/fixtures/fragment_on_union_typename_in_type_refinement.expected");
+    test_fixture(transform_fixture, file!(), "fragment_on_union_typename_in_type_refinement.graphql", "generate_typescript/fixtures/fragment_on_union_typename_in_type_refinement.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn fragment_on_union_typename_on_root() {
+    let input = include_str!("generate_typescript/fixtures/fragment_on_union_typename_on_root.graphql");
+    let expected = include_str!("generate_typescript/fixtures/fragment_on_union_typename_on_root.expected");
+    test_fixture(transform_fixture, file!(), "fragment_on_union_typename_on_root.graphql", "generate_typescript/fixtures/fragment_on_union_typename_on_root.expected", input, expected).await;
+}
+
+#[tokio::test]
 async fn fragment_spread() {
     let input = include_str!("generate_typescript/fixtures/fragment-spread.graphql");
     let expected = include_str!("generate_typescript/fixtures/fragment-spread.expected");
@@ -94,6 +136,48 @@ async fn inline_fragment() {
     let input = include_str!("generate_typescript/fixtures/inline-fragment.graphql");
     let expected = include_str!("generate_typescript/fixtures/inline-fragment.expected");
     test_fixture(transform_fixture, file!(), "inline-fragment.graphql", "generate_typescript/fixtures/inline-fragment.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn interface_field_fields_and_typename_on_interface() {
+    let input = include_str!("generate_typescript/fixtures/interface_field_fields_and_typename_on_interface.graphql");
+    let expected = include_str!("generate_typescript/fixtures/interface_field_fields_and_typename_on_interface.expected");
+    test_fixture(transform_fixture, file!(), "interface_field_fields_and_typename_on_interface.graphql", "generate_typescript/fixtures/interface_field_fields_and_typename_on_interface.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn interface_field_fields_on_interface_and_typename_in_type_refinement() {
+    let input = include_str!("generate_typescript/fixtures/interface_field_fields_on_interface_and_typename_in_type_refinement.graphql");
+    let expected = include_str!("generate_typescript/fixtures/interface_field_fields_on_interface_and_typename_in_type_refinement.expected");
+    test_fixture(transform_fixture, file!(), "interface_field_fields_on_interface_and_typename_in_type_refinement.graphql", "generate_typescript/fixtures/interface_field_fields_on_interface_and_typename_in_type_refinement.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn interface_field_typename_and_other_fields_on_interface() {
+    let input = include_str!("generate_typescript/fixtures/interface_field_typename_and_other_fields_on_interface.graphql");
+    let expected = include_str!("generate_typescript/fixtures/interface_field_typename_and_other_fields_on_interface.expected");
+    test_fixture(transform_fixture, file!(), "interface_field_typename_and_other_fields_on_interface.graphql", "generate_typescript/fixtures/interface_field_typename_and_other_fields_on_interface.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn interface_field_typename_in_all_type_refinements() {
+    let input = include_str!("generate_typescript/fixtures/interface_field_typename_in_all_type_refinements.graphql");
+    let expected = include_str!("generate_typescript/fixtures/interface_field_typename_in_all_type_refinements.expected");
+    test_fixture(transform_fixture, file!(), "interface_field_typename_in_all_type_refinements.graphql", "generate_typescript/fixtures/interface_field_typename_in_all_type_refinements.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn interface_field_typename_in_type_refinement() {
+    let input = include_str!("generate_typescript/fixtures/interface_field_typename_in_type_refinement.graphql");
+    let expected = include_str!("generate_typescript/fixtures/interface_field_typename_in_type_refinement.expected");
+    test_fixture(transform_fixture, file!(), "interface_field_typename_in_type_refinement.graphql", "generate_typescript/fixtures/interface_field_typename_in_type_refinement.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn interface_field_typename_on_interface() {
+    let input = include_str!("generate_typescript/fixtures/interface_field_typename_on_interface.graphql");
+    let expected = include_str!("generate_typescript/fixtures/interface_field_typename_on_interface.expected");
+    test_fixture(transform_fixture, file!(), "interface_field_typename_on_interface.graphql", "generate_typescript/fixtures/interface_field_typename_on_interface.expected", input, expected).await;
 }
 
 #[tokio::test]
@@ -514,6 +598,27 @@ async fn typename_on_union_with_non_matching_aliases() {
     let input = include_str!("generate_typescript/fixtures/typename-on-union-with-non-matching-aliases.graphql");
     let expected = include_str!("generate_typescript/fixtures/typename-on-union-with-non-matching-aliases.expected");
     test_fixture(transform_fixture, file!(), "typename-on-union-with-non-matching-aliases.graphql", "generate_typescript/fixtures/typename-on-union-with-non-matching-aliases.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn union_field_typename_in_all_type_refinements() {
+    let input = include_str!("generate_typescript/fixtures/union_field_typename_in_all_type_refinements.graphql");
+    let expected = include_str!("generate_typescript/fixtures/union_field_typename_in_all_type_refinements.expected");
+    test_fixture(transform_fixture, file!(), "union_field_typename_in_all_type_refinements.graphql", "generate_typescript/fixtures/union_field_typename_in_all_type_refinements.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn union_field_typename_in_type_refinement() {
+    let input = include_str!("generate_typescript/fixtures/union_field_typename_in_type_refinement.graphql");
+    let expected = include_str!("generate_typescript/fixtures/union_field_typename_in_type_refinement.expected");
+    test_fixture(transform_fixture, file!(), "union_field_typename_in_type_refinement.graphql", "generate_typescript/fixtures/union_field_typename_in_type_refinement.expected", input, expected).await;
+}
+
+#[tokio::test]
+async fn union_field_typename_on_root() {
+    let input = include_str!("generate_typescript/fixtures/union_field_typename_on_root.graphql");
+    let expected = include_str!("generate_typescript/fixtures/union_field_typename_on_root.expected");
+    test_fixture(transform_fixture, file!(), "union_field_typename_on_root.graphql", "generate_typescript/fixtures/union_field_typename_on_root.expected", input, expected).await;
 }
 
 #[tokio::test]

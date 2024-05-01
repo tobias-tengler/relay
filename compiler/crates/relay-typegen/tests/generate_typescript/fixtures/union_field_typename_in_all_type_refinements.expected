@@ -1,0 +1,33 @@
+==================================== INPUT ====================================
+fragment a on Query {
+  maybeNode {
+    ... on NonNode {
+      __typename
+      name
+    }
+    ... on Story {
+      __typename
+      actorCount
+    }
+  }
+}
+==================================== OUTPUT ===================================
+import { FragmentRefs } from "relay-runtime";
+export type a$data = {
+  readonly maybeNode: {
+    readonly __typename: "NonNode";
+    readonly name: string | null | undefined;
+  } | {
+    readonly __typename: "Story";
+    readonly actorCount: number | null | undefined;
+  } | {
+    // This will never be '%other', but we need some
+    // value in case none of the concrete values match.
+    readonly __typename: "%other";
+  } | null | undefined;
+  readonly " $fragmentType": "a";
+};
+export type a$key = {
+  readonly " $data"?: a$data;
+  readonly " $fragmentSpreads": FragmentRefs<"a">;
+};

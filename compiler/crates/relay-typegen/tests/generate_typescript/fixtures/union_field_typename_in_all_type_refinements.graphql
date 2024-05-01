@@ -1,0 +1,12 @@
+fragment a on Query {
+  maybeNode {
+    ... on NonNode {
+      __typename
+      name
+    }
+    ... on Story {
+      __typename
+      actorCount
+    }
+  }
+}

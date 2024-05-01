@@ -1,0 +1,10 @@
+fragment a on Node {
+  id
+  ... on User {
+    name
+  }
+  ... on Page {
+    __typename
+    doesViewerLike
+  }
+}

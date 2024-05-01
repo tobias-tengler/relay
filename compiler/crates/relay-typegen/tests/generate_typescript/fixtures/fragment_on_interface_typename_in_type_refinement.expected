@@ -1,0 +1,22 @@
+==================================== INPUT ====================================
+fragment a on Node {
+  ... on User {
+    name
+  }
+  ... on Page {
+    __typename
+    doesViewerLike
+  }
+}
+==================================== OUTPUT ===================================
+import { FragmentRefs } from "relay-runtime";
+export type a$data = {
+  readonly __typename: "Page";
+  readonly doesViewerLike?: boolean | null | undefined;
+  readonly name?: string | null | undefined;
+  readonly " $fragmentType": "a";
+};
+export type a$key = {
+  readonly " $data"?: a$data;
+  readonly " $fragmentSpreads": FragmentRefs<"a">;
+};
