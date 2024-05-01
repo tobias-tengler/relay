@@ -1,0 +1,33 @@
+==================================== INPUT ====================================
+fragment b on Query {
+  node(id: "") {
+    ... on User {
+      __typename
+      name
+    }
+    ... on Page {
+      __typename
+      doesViewerLike
+    }
+  }
+}
+==================================== OUTPUT ===================================
+import { FragmentRefs } from "relay-runtime";
+export type b$data = {
+  readonly node: {
+    readonly __typename: "Page";
+    readonly doesViewerLike: boolean | null | undefined;
+  } | {
+    readonly __typename: "User";
+    readonly name: string | null | undefined;
+  } | {
+    // This will never be '%other', but we need some
+    // value in case none of the concrete values match.
+    readonly __typename: "%other";
+  } | null | undefined;
+  readonly " $fragmentType": "b";
+};
+export type b$key = {
+  readonly " $data"?: b$data;
+  readonly " $fragmentSpreads": FragmentRefs<"b">;
+};

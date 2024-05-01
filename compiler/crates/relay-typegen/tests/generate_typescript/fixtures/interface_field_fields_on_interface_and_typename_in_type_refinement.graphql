@@ -1,0 +1,12 @@
+fragment b on Query {
+  node(id: "") {
+    id
+    ... on User {
+      name
+    }
+    ... on Page {
+      __typename
+      doesViewerLike
+    }
+  }
+}

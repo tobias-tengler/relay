@@ -1,0 +1,30 @@
+==================================== INPUT ====================================
+fragment a on Node {
+  __typename
+  ... on User {
+    name
+  }
+  ... on Page {
+    doesViewerLike
+  }
+}
+==================================== OUTPUT ===================================
+import { FragmentRefs } from "relay-runtime";
+export type a$data = {
+  readonly __typename: "Page";
+  readonly doesViewerLike: boolean | null | undefined;
+  readonly " $fragmentType": "a";
+} | {
+  readonly __typename: "User";
+  readonly name: string | null | undefined;
+  readonly " $fragmentType": "a";
+} | {
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  readonly __typename: "%other";
+  readonly " $fragmentType": "a";
+};
+export type a$key = {
+  readonly " $data"?: a$data;
+  readonly " $fragmentSpreads": FragmentRefs<"a">;
+};

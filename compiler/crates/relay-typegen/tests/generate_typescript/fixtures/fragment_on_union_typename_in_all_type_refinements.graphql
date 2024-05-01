@@ -1,0 +1,10 @@
+fragment c on MaybeNode {
+  ... on NonNode {
+    __typename
+    name
+  }
+  ... on Story {
+    __typename
+    actorCount
+  }
+}

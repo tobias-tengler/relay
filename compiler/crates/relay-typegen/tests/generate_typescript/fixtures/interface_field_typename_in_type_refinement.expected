@@ -1,0 +1,26 @@
+==================================== INPUT ====================================
+fragment b on Query {
+  node(id: "") {
+    ... on User {
+      name
+    }
+    ... on Page {
+      __typename
+      doesViewerLike
+    }
+  }
+}
+==================================== OUTPUT ===================================
+import { FragmentRefs } from "relay-runtime";
+export type b$data = {
+  readonly node: {
+    readonly __typename: "Page";
+    readonly doesViewerLike?: boolean | null | undefined;
+    readonly name?: string | null | undefined;
+  } | null | undefined;
+  readonly " $fragmentType": "b";
+};
+export type b$key = {
+  readonly " $data"?: b$data;
+  readonly " $fragmentSpreads": FragmentRefs<"b">;
+};

@@ -1,0 +1,22 @@
+==================================== INPUT ====================================
+fragment c on MaybeNode {
+  ... on NonNode {
+    name
+  }
+  ... on Story {
+    __typename
+    actorCount
+  }
+}
+==================================== OUTPUT ===================================
+import { FragmentRefs } from "relay-runtime";
+export type c$data = {
+  readonly __typename: "Story";
+  readonly actorCount?: number | null | undefined;
+  readonly name?: string | null | undefined;
+  readonly " $fragmentType": "c";
+};
+export type c$key = {
+  readonly " $data"?: c$data;
+  readonly " $fragmentSpreads": FragmentRefs<"c">;
+};
