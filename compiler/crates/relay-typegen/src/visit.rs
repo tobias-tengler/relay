@@ -1417,30 +1417,15 @@ fn get_discriminated_union_ast(
     ))
 }
 
-/// In the following condition, if base_fields is empty, the .all will return true
-/// but the .any will return false.
-///
-/// So, we can read this as:
-///
-/// If base fields is empty
-///   * if we have a type refinement to a concrete type
-///   * and within each type refinement, there is a __typename selection
-///
-/// If base fields is not empty
-///   * if we have a type refinement to a concrete type
-///   * and all fields are outside of type refinements are __typename selections
-///
-/// If this condition passes, we emit a discriminated union
 fn should_emit_discriminated_union(
     by_concrete_type: &IndexMap<Type, Vec<TypeSelection>>,
     base_fields: &IndexMap<StringKey, TypeSelection>,
 ) -> bool {
     !by_concrete_type.is_empty()
-        && base_fields.values().all(TypeSelection::is_typename)
         && (base_fields.values().any(TypeSelection::is_typename)
             || by_concrete_type
                 .values()
-                .all(|selections| has_typename_selection(selections)))
+                .any(|selections| has_typename_selection(selections)))
 }
 
 pub(crate) fn raw_response_selections_to_babel(
