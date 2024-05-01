@@ -176,14 +176,22 @@ export type TypenameOutside$key = {
 import type { FragmentType } from "relay-runtime";
 declare export opaque type TypenameOutsideWithAbstractType$fragmentType: FragmentType;
 export type TypenameOutsideWithAbstractType$data = {|
-  +__typename: string,
+  +__typename: "User",
   +address?: ?{|
     +city: ?string,
     +country: ?string,
-    +street?: ?string,
   |},
-  +firstName?: ?string,
+  +address: ?{|
+    +city: ?string,
+    +street: ?string,
+  |},
+  +firstName: ?string,
   +username?: ?string,
+  +$fragmentType: TypenameOutsideWithAbstractType$fragmentType,
+|} | {|
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  +__typename: "%other",
   +$fragmentType: TypenameOutsideWithAbstractType$fragmentType,
 |};
 export type TypenameOutsideWithAbstractType$key = {
@@ -195,10 +203,19 @@ export type TypenameOutsideWithAbstractType$key = {
 import type { FragmentType } from "relay-runtime";
 declare export opaque type TypenameWithCommonSelections$fragmentType: FragmentType;
 export type TypenameWithCommonSelections$data = {|
-  +__typename: string,
-  +firstName?: ?string,
+  +__typename: "Page",
   +name: ?string,
-  +username?: ?string,
+  +username: ?string,
+  +$fragmentType: TypenameWithCommonSelections$fragmentType,
+|} | {|
+  +__typename: "User",
+  +firstName: ?string,
+  +name: ?string,
+  +$fragmentType: TypenameWithCommonSelections$fragmentType,
+|} | {|
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  +__typename: "%other",
   +$fragmentType: TypenameWithCommonSelections$fragmentType,
 |};
 export type TypenameWithCommonSelections$key = {
@@ -212,6 +229,11 @@ declare export opaque type TypenameWithoutSpreads$fragmentType: FragmentType;
 export type TypenameWithoutSpreads$data = {|
   +__typename: "User",
   +firstName: ?string,
+  +$fragmentType: TypenameWithoutSpreads$fragmentType,
+|} | {|
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  +__typename: "%other",
   +$fragmentType: TypenameWithoutSpreads$fragmentType,
 |};
 export type TypenameWithoutSpreads$key = {

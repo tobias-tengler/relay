@@ -16,9 +16,15 @@ import { FragmentRefs } from "relay-runtime";
 export type b$data = {
   readonly node: {
     readonly __typename: "Page";
-    readonly doesViewerLike?: boolean | null | undefined;
+    readonly doesViewerLike: boolean | null | undefined;
     readonly id: string;
-    readonly name?: string | null | undefined;
+  } | {
+    // This will never be '%other', but we need some
+    // value in case none of the concrete values match.
+    readonly __typename: "%other";
+  } | {
+    readonly id: string;
+    readonly name: string | null | undefined;
   } | null | undefined;
   readonly " $fragmentType": "b";
 };

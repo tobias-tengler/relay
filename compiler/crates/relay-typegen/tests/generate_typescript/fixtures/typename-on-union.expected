@@ -167,14 +167,22 @@ export type TypenameOutside$key = {
 -------------------------------------------------------------------------------
 import { FragmentRefs } from "relay-runtime";
 export type TypenameOutsideWithAbstractType$data = {
-  readonly __typename: string;
+  readonly __typename: "User";
   readonly address?: {
     readonly city: string | null | undefined;
     readonly country: string | null | undefined;
-    readonly street?: string | null | undefined;
   } | null | undefined;
-  readonly firstName?: string | null | undefined;
+  readonly address: {
+    readonly city: string | null | undefined;
+    readonly street: string | null | undefined;
+  } | null | undefined;
+  readonly firstName: string | null | undefined;
   readonly username?: string | null | undefined;
+  readonly " $fragmentType": "TypenameOutsideWithAbstractType";
+} | {
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  readonly __typename: "%other";
   readonly " $fragmentType": "TypenameOutsideWithAbstractType";
 };
 export type TypenameOutsideWithAbstractType$key = {
@@ -184,10 +192,19 @@ export type TypenameOutsideWithAbstractType$key = {
 -------------------------------------------------------------------------------
 import { FragmentRefs } from "relay-runtime";
 export type TypenameWithCommonSelections$data = {
-  readonly __typename: string;
-  readonly firstName?: string | null | undefined;
+  readonly __typename: "Page";
   readonly name: string | null | undefined;
-  readonly username?: string | null | undefined;
+  readonly username: string | null | undefined;
+  readonly " $fragmentType": "TypenameWithCommonSelections";
+} | {
+  readonly __typename: "User";
+  readonly firstName: string | null | undefined;
+  readonly name: string | null | undefined;
+  readonly " $fragmentType": "TypenameWithCommonSelections";
+} | {
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  readonly __typename: "%other";
   readonly " $fragmentType": "TypenameWithCommonSelections";
 };
 export type TypenameWithCommonSelections$key = {
@@ -199,6 +216,11 @@ import { FragmentRefs } from "relay-runtime";
 export type TypenameWithoutSpreads$data = {
   readonly __typename: "User";
   readonly firstName: string | null | undefined;
+  readonly " $fragmentType": "TypenameWithoutSpreads";
+} | {
+  // This will never be '%other', but we need some
+  // value in case none of the concrete values match.
+  readonly __typename: "%other";
   readonly " $fragmentType": "TypenameWithoutSpreads";
 };
 export type TypenameWithoutSpreads$key = {
