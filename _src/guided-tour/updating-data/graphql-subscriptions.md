@@ -8,7 +8,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 <FbInternalOnly>
 
@@ -100,7 +100,7 @@ const {useMemo} = require('React');
 function useFeedbackSubscription(
   input: FeedbackLikeSubscribeData,
 ) {
-  const config = useMemo({
+  const config = useMemo(() => ({
     subscription: graphql`
       subscription FeedbackLikeSubscription(
         $input: FeedbackLikeSubscribeData!
@@ -113,7 +113,7 @@ function useFeedbackSubscription(
       }
     `,
     variables: {input},
-  }, [input])
+  }), [input]);
 
   return useSubscription(config);
 }

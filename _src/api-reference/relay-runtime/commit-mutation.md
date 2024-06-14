@@ -8,7 +8,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 import MutationConfig from '../types/MutationConfig.md';
 import Disposable from '../types/Disposable.md';
 
@@ -22,7 +22,7 @@ See also the [`useMutation`](../use-mutation/) API and [Guide to Updating Data](
 import type {FeedbackLikeMutation} from 'FeedbackLikeMutation.graphql';
 const React = require('React');
 
-const {graphql, useMutation} = require('react-relay');
+const {graphql, commitMutation} = require('react-relay');
 
 function likeFeedback(environment: IEnvironment): Disposable {
   return commitMutation<FeedbackLikeMutation>(environment, {
@@ -53,14 +53,6 @@ function likeFeedback(environment: IEnvironment): Disposable {
 
 <MutationConfig />
 
-### Flow Type Parameters
-
-* `TMutation`: Type parameter that should corresponds the Flow type for the mutation query. This type is available to import from the the auto-generated file: `<mutationName>.graphql.js`.
-  * Note that this auto-generated type will implement `MutationParameters`.
-
-:::caution
-If you do not **explicitly** pass this type parameter, the variables, optimistic response and response passed to `onCompleted` **will not be type-checked**!
-:::
 
 ### Return Value
 

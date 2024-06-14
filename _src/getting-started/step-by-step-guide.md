@@ -1,6 +1,6 @@
 ---
 id: step-by-step-guide
-title: Step-by-step Guide
+title: Server Setup Example
 slug: /getting-started/step-by-step-guide/
 description: Step-by-step guide for setting up Relay
 keywords:
@@ -8,7 +8,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 
 Relay is a framework for managing and declaratively fetching GraphQL data. It allows developers to declare *what* data each component needs via GraphQL, and then aggregate these dependencies and efficiently fetch the data in fewer round trips. In this guide we'll introduce the key concepts for using Relay in a React app one at a time.
@@ -145,7 +145,7 @@ export default App;
 
 ## Step 3: When To Use Relay
 
-At this point we can fetch data with GraphQL and render it with React. This is a reasonable solution that can be sufficient for many apps. However, this approach doesn't necessarily scale. As our app grows in size and complexity, or the number of people working on the app grows, a simple approach like this can become limiting. Relay provides a number of features designed to help keep applications fast and reliable even as they grow in size and complexity: colocating data dependencies in components with GraphQL fragments, data consistency, mutations, etc. Check out [Thinking in GraphQL](../../principles-and-architecture/thinking-in-graphql/) and [Thinking in Relay](../../principles-and-architecture/thinking-in-relay/) for an overview of how Relay makes it easier to work with GraphQL.
+At this point we can fetch data with GraphQL and render it with React. This is a reasonable solution that can be sufficient for many apps. However, this approach doesn't necessarily scale. As our app grows in size and complexity, or the number of people working on the app grows, a simple approach like this can become limiting. Relay provides a number of features designed to help keep applications fast and reliable even as they grow in size and complexity: collocating data dependencies in components with GraphQL fragments, data consistency, mutations, etc. Check out [Thinking in GraphQL](../../principles-and-architecture/thinking-in-graphql/) and [Thinking in Relay](../../principles-and-architecture/thinking-in-relay/) for an overview of how Relay makes it easier to work with GraphQL.
 
 
 ## Step 4: Adding Relay To Our Project
@@ -191,7 +191,8 @@ Now that we have a schema we can modify `package.json` to run the compiler first
   },
   "relay": {
     "src": "./src/",
-    "schema": "./schema.graphql"
+    "schema": "./schema.graphql",
+    "language": "javascript"
   }
   ...
 }

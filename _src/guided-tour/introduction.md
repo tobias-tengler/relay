@@ -11,7 +11,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 import FbCrashCourse from './fb/FbCrashCourse.md';
 
@@ -35,6 +35,20 @@ Before getting started, bear in mind that we assume some level of familiarity wi
 * [Javascript](https://felix-kling.de/jsbasics/)
 * [React](https://reactjs.org/docs/getting-started.html)
 * [GraphQL](https://graphql.org/learn/)
+
+</OssOnly>
+
+## On to the Tutorial
+
+<FbInternalOnly>
+
+* [Tutorial](https://www.internalfb.com/intern/staticdocs/relay/docs/tutorial/intro/)
+
+</FbInternalOnly>
+
+<OssOnly>
+
+* [Tutorial](https://relay.dev/docs/tutorial/intro/)
 
 </OssOnly>
 

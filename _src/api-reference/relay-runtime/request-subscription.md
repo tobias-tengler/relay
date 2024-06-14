@@ -8,7 +8,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 import GraphQLSubscriptionConfig from '../types/GraphQLSubscriptionConfig.md';
 import Disposable from '../types/Disposable.md';
 
@@ -40,10 +40,6 @@ function createSubscription(environment: IEnvironment): Disposable {
 * `config`: `GraphQLSubscriptionConfig`
 
 <GraphQLSubscriptionConfig />
-
-### Flow Type Parameters
-
-* `TSubscriptionPayload`: The type of the payloads vended by the subscription. You should pass the flow type imported from the auto-generated `.graphql` file corresponding to the subscription, e.g. use `UserDataSubscription` as the type parameter, from `import type {UserDataSubscription} from './__generated__/UserDataSubscription.graphql'`;
 
 ### Return Type
 

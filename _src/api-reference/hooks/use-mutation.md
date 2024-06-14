@@ -8,7 +8,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 import FbUseMutationParameter from './fb/FbUseMutationParameter.md';
 
 ## `useMutation`
@@ -69,11 +69,6 @@ function LikeButton() {
 </OssOnly>
 
 <FbUseMutationParameter />
-
-
-### Flow Type Parameters
-
-* `TMutation`: Type parameter that should corresponds the Flow type for the mutation query. This type is available to import from the the auto-generated file: `<mutationName>.graphql.js`.
 
 ### Return Value
 

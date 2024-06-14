@@ -13,7 +13,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 ## `loadQuery`
 
@@ -63,11 +63,6 @@ const queryReference = loadQuery(
     * `networkCacheConfig`: *_[Optional]_* Default value: `{force: true}`. Object containing cache config options for the *network layer*. Note that the network layer may contain an *additional* query response cache which will reuse network responses for identical queries. If you want to bypass this cache completely (which is the default behavior), pass `{force: true}` as the value for this option.
 * `environmentProviderOptions`: *[Optional]* options object
     * Options passed to an `environmentProvider` used in `prepareSurfaceEntryPoint.js`.
-
-### Flow Type Parameters
-
-* `TQuery`: Type parameter that should correspond to the Flow type for the specified query. This type is available to import from the the auto-generated file: `<query_name>.graphql.js`.
-* `TEnvironmentProviderOptions`: The type of the `environmentProviderOptions` parameter.
 
 ### Return Value
 

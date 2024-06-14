@@ -8,7 +8,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 import GraphQLSubscriptionConfig from '../types/GraphQLSubscriptionConfig.md';
 
 ## `useSubscription`
@@ -44,12 +44,7 @@ function UserComponent({ id }) {
 * `config`: a config of type [`GraphQLSubscriptionConfig`](#type-graphqlsubscriptionconfigtsubscriptionpayload) passed to [`requestSubscription`](../request-subscription/)
 * `requestSubscriptionFn`: `?<TSubscriptionPayload>(IEnvironment, GraphQLSubscriptionConfig<TSubscriptionPayload>) => Disposable`. An optional function with the same signature as [`requestSubscription`](../request-subscription/), which will be called in its stead. Defaults to `requestSubscription`.
 
-
 <GraphQLSubscriptionConfig />
-
-### Flow Type Parameters
-
-* `TSubscriptionPayload`: The type of the payloads vended by the subscription. You should pass the flow type imported from the auto-generated `.graphql` file corresponding to the subscription, e.g. use `UserDataSubscription` as the type parameter, from `import type {UserDataSubscription} from './__generated__/UserDataSubscription.graphql'`;
 
 ### Behavior
 

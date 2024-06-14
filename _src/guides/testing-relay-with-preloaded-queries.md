@@ -12,7 +12,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {FbInternalOnly, OssOnly} from 'internaldocs-fb-helpers';
+import {FbInternalOnly, OssOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 Components that use preloaded queries (`useQueryLoader` and `usePreloadedQuery` hooks) require slightly different and more convoluted test setup.
 
@@ -32,11 +32,8 @@ In short, there are two steps that need to be performed **before rendering the c
 
 ```javascript
 const {RelayEnvironmentProvider} = require('react-relay');
-const { MockPayloadGenerator, createMockEnvironment } = require('relay-test-utils');
-const {render} = require('testing-library-react');
-// at the time of writing, act is not re-exported by our internal testing-library-react
-// but is re-exported by the "external" version
-const {act} = require('ReactTestUtils');
+const {MockPayloadGenerator, createMockEnvironment} = require('relay-test-utils');
+const {act, render} = require('@testing-library/react');
 test("...", () => {
   // arrange
   const environment = createMockEnvironment();
@@ -141,7 +138,7 @@ This is more straightforward - it is done via a call to `environment.mock.queueP
    * Used a different query - the query resolver would not be called, `currentOperation` will be `null`
    * Query variables don't match - the query resolver would not be called, `currentOperation` will be `null` (make sure to inspect the `variables`).
       * Also, make sure arrays are in the same order, if any (or better yet, use sets, if at all possible).
-* If data returned rom the query is not what you expect, make sure you're generating the right graphql type.
+* If data returned from the query is not what you expect, make sure you're generating the right graphql type.
    * You can tell you're mocking the wrong one if the return values look something like `<mock-value-for-field-"formatted_amount">`
 
 

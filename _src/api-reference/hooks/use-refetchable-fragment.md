@@ -9,7 +9,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {FbInternalOnly, OssOnly} from 'internaldocs-fb-helpers';
+import {FbInternalOnly, OssOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 import FbUseRefetchableFragmentApiReferenceCodeExample from './fb/FbUseRefetchableFragmentApiReferenceCodeExample.md';
 import FbUseRefetchableFragmentReturnValue from './fb/FbUseRefetchableFragmentReturnValue.md';
 
@@ -24,7 +24,6 @@ You can use `useRefetchableFragment` when you want to fetch and re-render a frag
 <OssOnly>
 
 ```js
-import type {CommentBodyRefetchQuery} from 'CommentBodyRefetchQuery.graphql';
 import type {CommentBody_comment$key} from 'CommentBody_comment.graphql';
 
 const React = require('React');
@@ -37,7 +36,7 @@ type Props = {
 };
 
 function CommentBody(props: Props) {
-  const [data, refetch] = useRefetchableFragment<CommentBodyRefetchQuery, _>(
+  const [data, refetch] = useRefetchableFragment(
     graphql`
       fragment CommentBody_comment on Comment
       @refetchable(queryName: "CommentBodyRefetchQuery") {
@@ -75,11 +74,6 @@ module.exports = CommentBody;
 * `fragmentReference`: The *fragment reference* is an opaque Relay object that Relay uses to read the data for the fragment from the store; more specifically, it contains information about which particular object instance the data should be read from.
     * The type of the fragment reference can be imported from the generated Flow types, from the file `<fragment_name>.graphql.js`, and can be used to declare the type of your `Props`. The name of the fragment reference type will be: `<fragment_name>$key`. We use our [lint rule](https://github.com/relayjs/eslint-plugin-relay) to enforce that the type of the fragment reference prop is correctly declared.
 
-### Flow Type Parameters
-
-* `TQuery`: Type parameter that should corresponds the Flow type for the `@refetchable` query. This type is available to import from the the auto-generated file: `<queryName>.graphql.js`.
-* `TFragmentRef`: Type parameter corresponds to the type of the fragment reference argument (i.e. `<fragment_name>$key`). This type usually does not need to be explicitly specified, and can be passed as `_` to let Flow infer the concrete type.
-
 ### Return Value
 
 <FbInternalOnly>
@@ -96,8 +90,9 @@ Tuple containing the following values
     * Arguments:
         * `variables`: Object containing the new set of variable values to be used to fetch the `@refetchable` query.
             * These variables need to match GraphQL variables referenced inside the fragment.
-            * However, only the variables that are intended to change for the refetch request need to be specified; any variables referenced by the fragment that are omitted from this input will fall back to using the value specified in the original parent query. So for example, to refetch the fragment with the exact same variables as it was originally fetched, you can call `refetch({})`.
-            * Similarly, passing an `id` value for the `$id` variable is _*optional*_, unless the fragment wants to be refetched with a different `id`. When refetching a `@refetchable` fragment, Relay will already know the id of the rendered object.
+            * If the fragment key passed to `useRefetchableFragment` is optional then all non-optional variables must be passed including, potentially, the object's ID since Relay may not have any existing variables to reuse.
+            * If the fragment key is non-optional, only the variables that are intended to change for the refetch request need to be specified; any variables referenced by the fragment that are omitted from this input will fall back to using the value specified in the original parent query. So for example, to refetch the fragment with the exact same variables as it was originally fetched, you can call `refetch({})`.
+            * Similarly, if the fragment key is non-optional, passing an `id` value for the `$id` variable is _*optional*_, unless the fragment wants to be refetched with a different `id`. When refetching a non-nullable `@refetchable` fragment, Relay will already know the id of the rendered object.
         * `options`: *_[Optional]_* options object
             * `fetchPolicy`: Determines if cached data should be used, and when to send a network request based on cached data that is available. See the [Fetch Policies](../../guided-tour/reusing-cached-data/fetch-policies/) section for full specification.
             * `onComplete`: Function that will be called whenever the refetch request has completed, including any incremental data payloads.

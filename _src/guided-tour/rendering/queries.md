@@ -12,7 +12,7 @@ keywords:
 ---
 
 import DocsRating from '@site/src/core/DocsRating';
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 import FbEntrypointsExtraInfo from './fb/FbEntrypointsExtraInfo.md';
 
@@ -76,6 +76,7 @@ To *render* a query in Relay, you can use the `usePreloadedQuery` hook. `usePrel
 
 ```js
 import type {HomeTabQuery} from 'HomeTabQuery.graphql';
+import type {PreloadedQuery} from 'react-relay';
 
 const React = require('React');
 const {graphql, usePreloadedQuery} = require('react-relay');
@@ -85,7 +86,7 @@ type Props = {
 };
 
 function HomeTab(props: Props) {
-  const data = usePreloadedQuery<HomeTabQuery>(
+  const data = usePreloadedQuery(
     graphql`
       query HomeTabQuery($id: ID!) {
         user(id: $id) {
@@ -136,7 +137,7 @@ function AppTabs(props) {
   const [
     homeTabQueryRef,
     loadHomeTabQuery,
-  ] = useQueryLoader<HomeTabQueryType>(
+  ] = useQueryLoader(
     HomeTabQuery,
     props.initialQueryRef, /* e.g. provided by router */
   );
