@@ -14,7 +14,9 @@ use std::sync::Arc;
 
 use common::ArgumentName;
 use common::DirectiveName;
+use graphql_ir::ExecutableDefinitionName;
 use graphql_ir::FragmentDefinitionName;
+use graphql_ir::VariableName;
 use intern::string_key::Intern;
 use intern::string_key::StringKey;
 use log::error;
@@ -63,6 +65,11 @@ pub enum DefinitionDescription {
     },
     Directive {
         directive_name: DirectiveName,
+    },
+    // TODO: Naming
+    VariableDefinition {
+        parent_definition: ExecutableDefinitionName,
+        variable_name: VariableName,
     },
 }
 
@@ -136,6 +143,10 @@ pub fn on_goto_definition(
         DefinitionDescription::Directive { directive_name } => {
             locate_directive_definition(directive_name, &schema, &root_dir)?
         }
+        DefinitionDescription::VariableDefinition {
+            parent_definition,
+            variable_name,
+        } => locate_variable_definition(program, parent_definition, variable_name, &root_dir)?,
     };
 
     // For some lsp-clients, such as clients relying on org.eclipse.lsp4j,
@@ -147,6 +158,57 @@ pub fn on_goto_definition(
     }
 
     Ok(Some(goto_definition_response))
+}
+
+fn locate_variable_definition(
+    program: graphql_ir::Program,
+    parent_definition: ExecutableDefinitionName,
+    variable_name: VariableName,
+    root_dir: &std::path::Path,
+) -> Result<GotoDefinitionResponse, LSPRuntimeError> {
+    match parent_definition {
+        ExecutableDefinitionName::OperationDefinitionName(operation_name) => program
+            .operation(operation_name)
+            .and_then(|operation| {
+                operation
+                    .variable_definitions
+                    .iter()
+                    .find(|v| v.name.item == variable_name)
+                    .and_then(|variable_definition| {
+                        transform_relay_location_on_disk_to_lsp_location(
+                            root_dir,
+                            variable_definition.name.location,
+                        )
+                        .ok()
+                    })
+            })
+            .map(GotoDefinitionResponse::Scalar)
+            .ok_or(LSPRuntimeError::ExpectedError),
+        ExecutableDefinitionName::FragmentDefinitionName(fragment_name) => {
+            let fragment = program
+                .fragment(fragment_name)
+                .ok_or(LSPRuntimeError::ExpectedError)?;
+
+            if let Some(fragment_argument_location) = fragment
+                .variable_definitions
+                .iter()
+                .find(|v| v.name.item == variable_name)
+                .and_then(|variable_definition| {
+                    transform_relay_location_on_disk_to_lsp_location(
+                        root_dir,
+                        variable_definition.name.location,
+                    )
+                    .ok()
+                })
+            {
+                return Ok(GotoDefinitionResponse::Scalar(fragment_argument_location));
+            }
+
+            // TODO: Look for global variables
+
+            Err(LSPRuntimeError::ExpectedError)
+        }
+    }
 }
 
 fn locate_fragment_definition(
