@@ -10,7 +10,11 @@ use std::sync::Arc;
 use common::ArgumentName;
 use common::DirectiveName;
 use common::Span;
+use graphql_ir::ExecutableDefinitionName;
 use graphql_ir::FragmentDefinitionName;
+use graphql_ir::OperationDefinitionName;
+use graphql_ir::VariableName;
+use graphql_syntax::ExecutableDefinition;
 use graphql_syntax::ExecutableDocument;
 use graphql_syntax::SchemaDocument;
 use intern::string_key::StringKey;
@@ -28,6 +32,8 @@ use resolution_path::ResolvePosition;
 use resolution_path::ScalarFieldPath;
 use resolution_path::SelectionParent;
 use resolution_path::TypeConditionPath;
+use resolution_path::VariableIdentifierParent;
+use resolution_path::VariableIdentifierPath;
 use schema::SDLSchema;
 
 use super::DefinitionDescription;
@@ -90,6 +96,39 @@ pub fn get_graphql_definition_description(
     let node_path = document.resolve((), position_span);
 
     match node_path {
+        ResolutionPath::VariableIdentifier(VariableIdentifierPath {
+            inner: variable,
+            parent: VariableIdentifierParent::Value(_),
+            ..
+        }) => {
+            let definition = document
+                .definitions
+                .iter()
+                .find(|d| d.contains(position_span))
+                .ok_or(LSPRuntimeError::ExpectedError)?;
+
+            match definition {
+                ExecutableDefinition::Operation(operation) => {
+                    operation.name.map(|operation_name| {
+                        ExecutableDefinitionName::OperationDefinitionName(OperationDefinitionName(
+                            operation_name.value,
+                        ))
+                    })
+                }
+                ExecutableDefinition::Fragment(fragment) => {
+                    Some(ExecutableDefinitionName::FragmentDefinitionName(
+                        FragmentDefinitionName(fragment.name.value),
+                    ))
+                }
+            }
+            .map(
+                |variable_definition_parent| DefinitionDescription::VariableDefinition {
+                    parent_definition: variable_definition_parent,
+                    variable_name: VariableName(variable.name),
+                },
+            )
+            .ok_or(LSPRuntimeError::ExpectedError)
+        }
         ResolutionPath::Ident(IdentPath {
             inner: fragment_name,
             parent: IdentParent::FragmentSpreadName(_),
