@@ -95,7 +95,7 @@ const StoryFragment = graphql`
         url
       }
     }
-    thumbnail {
+    image {
       url
     }
   }
@@ -442,7 +442,7 @@ const StoryFragment = graphql`
     poster {
       ...PosterBylineFragment
     }
-    image {
+    thumbnail {
       // change-line
       ...ImageFragment @arguments(width: 400)
     }
