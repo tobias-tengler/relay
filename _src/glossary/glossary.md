@@ -20,7 +20,7 @@ Data-Driven Dependencies. Facebook's way of including the code to render a parti
 
 <FbInternalOnly>
 
-See the [@match](#match) directive, [@module](#module) directive and [the 3D guide](../guides/data-driven-dependencies).
+See the [@match](#match) directive, [@module](#module) directive and [the 3D guide](../guides/data-driven-dependencies/server-3d).
 
 </FbInternalOnly>
 
@@ -964,7 +964,7 @@ See also [abstract type refinement](#abstract-type-refinement).
 A callback passed to `commitMutation`, which provides the application developer with imperative control over the data in the store.
 
 <!-- TODO make optimistic updater a link -->
-See [the documentation](../guided-tour/updating-data/) and also optimistic updater.
+See [the documentation](../guided-tour/updating-data/introduction.md) and also optimistic updater.
 
 ## Value
 
