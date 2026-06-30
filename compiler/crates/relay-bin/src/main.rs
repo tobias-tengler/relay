@@ -20,12 +20,15 @@ use intern::string_key::Intern;
 use log::error;
 use log::info;
 use relay_codemod::AvailableCodemod;
+use relay_codemod::fix_diagnostics;
 use relay_codemod::run_codemod;
+use relay_codemod::transform_fragment_arguments;
 #[cfg(unix)]
 use relay_compiler::DeferredArtifactCache;
 #[cfg(unix)]
 use relay_compiler::DeferredArtifactWriter;
 use relay_compiler::FileSourceKind;
+use relay_compiler::GraphQLAsts;
 use relay_compiler::LocalPersister;
 #[cfg(unix)]
 use relay_compiler::NoopArtifactWriter;
@@ -478,6 +481,14 @@ async fn handle_codemod_command(command: CodemodCommand) -> Result<(), Error> {
     let mut config = get_config(command.config)?;
     let root_dir = config.root_dir.clone();
     set_project_flag(&mut config, &command.projects)?;
+
+    // The fragment-argument codemod operates on the source AST and needs the
+    // `enable_fragment_argument_transform` feature flag, so it takes a separate
+    // path rather than the program-based `run_codemod`.
+    if matches!(command.codemod, AvailableCodemod::TransformFragmentArguments) {
+        return handle_transform_fragment_arguments_codemod(config, root_dir).await;
+    }
+
     let programs = get_programs(config, Arc::new(ConsoleLogger))
         .await
         .map(|(programs, _, _)| programs.values().cloned().collect());
@@ -488,6 +499,66 @@ async fn handle_codemod_command(command: CodemodCommand) -> Result<(), Error> {
             details: format!("{:?}", e),
         }),
     }
+}
+
+async fn handle_transform_fragment_arguments_codemod(
+    config: Config,
+    root_dir: PathBuf,
+) -> Result<(), Error> {
+    // The rewritten output uses the native fragment-argument syntax, which only
+    // parses when the flag is enabled. Refuse to run for any targeted project
+    // that doesn't have it enabled.
+    relay_codemod::check_fragment_argument_flag(config.projects.iter().map(
+        |(name, project_config)| {
+            (
+                name.to_string(),
+                project_config.enabled,
+                project_config
+                    .feature_flags
+                    .enable_fragment_argument_transform,
+            )
+        },
+    ))
+    .map_err(|details| Error::CodemodError { details })?;
+
+    let (_, compiler_state, config) = get_programs(config, Arc::new(ConsoleLogger))
+        .await
+        .map_err(|e| Error::CompilerError {
+            details: format!("{}", e),
+        })?;
+
+    let dirty_artifact_sources = compiler_state.get_dirty_artifact_sources(&config);
+    let graphql_asts =
+        GraphQLAsts::from_graphql_sources_map(&compiler_state.graphql_sources, &dirty_artifact_sources, &config)
+            .map_err(|e| Error::CompilerError {
+                details: format!("{}", e),
+            })?;
+
+    let mut definitions = Vec::new();
+    for asts in graphql_asts.values() {
+        definitions.extend_from_slice(asts.get_all_executable_definitions());
+    }
+
+    // A source file shared by more than one enabled project appears once per
+    // project, so the same definition (and thus the same edit) can be produced
+    // multiple times. Dedupe edits by their (source file, span) before applying
+    // them, otherwise the duplicates would collide and abort the whole run.
+    let diagnostics = transform_fragment_arguments(&definitions);
+    let mut seen_edits = std::collections::HashSet::new();
+    let diagnostics: Vec<_> = diagnostics
+        .into_iter()
+        .filter(|diagnostic| {
+            let location = diagnostic.location();
+            let span = location.span();
+            seen_edits.insert((location.source_location(), span.start, span.end))
+        })
+        .collect();
+
+    fix_diagnostics("TransformFragmentArguments", &root_dir, &diagnostics).map_err(|e| {
+        Error::CodemodError {
+            details: format!("{:?}", e),
+        }
+    })
 }
 
 async fn handle_regenerate_subschema_command(command: UpdateSchemaCommand) -> Result<(), Error> {

@@ -39,6 +39,16 @@ pub enum AvailableCodemod {
 
     /// Runs all Relay compiler transforms and fixes all fixable diagnostics
     FixAll,
+
+    /// Rewrites the legacy directive-based fragment-argument syntax
+    /// (`@argumentDefinitions` / `@arguments`) into the native GraphQL
+    /// fragment-argument syntax. Requires the
+    /// `featureFlags.enable_fragment_argument_transform` compiler flag.
+    ///
+    /// Handled directly in `relay-bin`'s `handle_codemod_command` (it operates
+    /// on the source AST + needs the feature-flag check) rather than via
+    /// `run_codemod`.
+    TransformFragmentArguments,
 }
 
 #[derive(Args, Debug, Clone)]
@@ -75,6 +85,14 @@ pub async fn run_codemod(
                 format!("{codemod:?}").as_str(),
             )
             .await
+        }
+        AvailableCodemod::TransformFragmentArguments => {
+            // Handled directly in `handle_codemod_command` because it operates
+            // on the source AST and needs the feature-flag check rather than
+            // the compiled `Programs`.
+            unreachable!(
+                "TransformFragmentArguments is handled before run_codemod in handle_codemod_command"
+            )
         }
         AvailableCodemod::FixAll => {
             match programs {
@@ -158,19 +176,41 @@ fn apply_actions(actions: Vec<CodeActionOrCommand>) -> Result<(), std::io::Error
         }
     }
 
+    // Sort and validate the changes for EVERY file before writing any of them.
+    // This avoids leaving the working tree in a half-rewritten state when one
+    // file's changes overlap (which aborts the run): either every file is
+    // written, or none is.
+    let mut sorted_changes: Vec<(Uri, Vec<TextEdit>)> = Vec::new();
     for (file, mut changes) in collected_changes {
         sort_changes(&file, &mut changes)?;
+        sorted_changes.push((file, changes));
+    }
 
-        // Read file into memory and apply changes
+    for (file, changes) in sorted_changes {
+        // Read file into memory and apply changes. Changes are applied in
+        // reverse order (highest position first) so that splicing in
+        // replacements — which can change the number of lines — does not
+        // invalidate the line indices of edits that come earlier in the file.
         let file_contents: String = fs::read_to_string(file.path().as_str())?;
         let mut lines: Vec<String> = file_contents.lines().map(|s| s.to_string()).collect();
-        for change in &changes {
-            let line = change.range.start.line as usize;
-            let mut new_line = String::new();
-            new_line.push_str(&lines[line][..change.range.start.character as usize]);
-            new_line.push_str(&change.new_text);
-            new_line.push_str(&lines[line][change.range.end.character as usize..]);
-            lines[line] = new_line;
+        for change in changes.iter().rev() {
+            let start_line = change.range.start.line as usize;
+            let end_line = change.range.end.line as usize;
+            let start_character = change.range.start.character as usize;
+            let end_character = change.range.end.character as usize;
+
+            // Take the prefix from the start line and the suffix from the end
+            // line, splicing the new text (which may itself span multiple
+            // lines) in between and dropping any lines fully covered by the
+            // range.
+            let mut spliced = String::new();
+            spliced.push_str(&lines[start_line][..start_character]);
+            spliced.push_str(&change.new_text);
+            spliced.push_str(&lines[end_line][end_character..]);
+
+            let replacement_lines: Vec<String> =
+                spliced.split('\n').map(|s| s.to_string()).collect();
+            lines.splice(start_line..=end_line, replacement_lines);
         }
 
         // Write file back out
@@ -182,18 +222,18 @@ fn apply_actions(actions: Vec<CodeActionOrCommand>) -> Result<(), std::io::Error
     Ok(())
 }
 
-fn sort_changes(uri: &Uri, changes: &mut Vec<TextEdit>) -> Result<(), std::io::Error> {
-    // Now we have all the changes for this file. Sort them by position within the file, end of file first
-    // This way the changes are applied in reverse order, so we don't have to worry about altering the positions of the remaining changes
+fn sort_changes(uri: &Uri, changes: &mut [TextEdit]) -> Result<(), std::io::Error> {
+    // Sort the changes by their start position within the file. They are later
+    // applied in reverse order so that splicing earlier edits doesn't shift the
+    // positions of edits that come before them in the file.
     changes.sort_by_key(|change| change.range.start);
 
-    // Verify none of the changes overlap
+    // Verify none of the changes overlap: a change overlaps its predecessor if
+    // it starts before the predecessor ends.
     let mut prev_change: Option<&TextEdit> = None;
-    for change in changes {
+    for change in changes.iter() {
         if let Some(prev_change) = prev_change
-            && (change.range.end.line > prev_change.range.start.line
-                || (change.range.end.line == prev_change.range.start.line
-                    && change.range.end.character > prev_change.range.start.character))
+            && change.range.start < prev_change.range.end
         {
             return Err(std::io::Error::other(format!(
                 "Codemod produced changes that overlap: File {}, changes: {:?} vs {:?}",
@@ -205,6 +245,129 @@ fn sort_changes(uri: &Uri, changes: &mut Vec<TextEdit>) -> Result<(), std::io::E
         prev_change = Some(change);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr as _;
+
+    use lsp_types::CodeAction;
+    use lsp_types::CodeActionOrCommand;
+    use lsp_types::Position;
+    use lsp_types::Range;
+    use lsp_types::TextEdit;
+    use lsp_types::Uri;
+    use lsp_types::WorkspaceEdit;
+
+    use super::*;
+
+    fn code_action_for(uri: &Uri, edits: Vec<TextEdit>) -> CodeActionOrCommand {
+        let mut changes = std::collections::HashMap::new();
+        changes.insert(uri.clone(), edits);
+        CodeActionOrCommand::CodeAction(CodeAction {
+            title: "test".to_string(),
+            edit: Some(WorkspaceEdit {
+                changes: Some(changes),
+                document_changes: None,
+                ..Default::default()
+            }),
+            ..Default::default()
+        })
+    }
+
+    #[test]
+    fn applies_multi_line_range_edit() {
+        let source = "fragment listFragment on Api\n@argumentDefinitions(\n  count: { type: \"Int\" }\n) {\n  id\n}\n";
+
+        let mut temp_path = std::env::temp_dir();
+        temp_path.push(format!("relay_codemod_apply_test_{}.graphql", std::process::id()));
+        fs::write(&temp_path, source).unwrap();
+
+        let uri = Uri::from_str(&format!("file://{}", temp_path.to_string_lossy())).unwrap();
+
+        // Insert variable definitions after the fragment name (single-line,
+        // multi-line replacement text) ...
+        let insert = TextEdit {
+            range: Range::new(Position::new(0, 21), Position::new(0, 21)),
+            new_text: "(\n  $count: Int\n)".to_string(),
+        };
+        // ... and delete the multi-line `@argumentDefinitions(...)` directive
+        // including the preceding newline (range spans lines 0..3).
+        let delete = TextEdit {
+            range: Range::new(Position::new(0, 28), Position::new(3, 1)),
+            new_text: String::new(),
+        };
+
+        apply_actions(vec![code_action_for(&uri, vec![insert, delete])]).unwrap();
+
+        let result = fs::read_to_string(&temp_path).unwrap();
+        fs::remove_file(&temp_path).ok();
+
+        assert_eq!(
+            result,
+            "fragment listFragment(\n  $count: Int\n) on Api {\n  id\n}"
+        );
+    }
+
+    /// End-to-end test through the real pipeline: the fragment-argument
+    /// transform emits diagnostics, `diagnostics_to_code_actions` maps their
+    /// spans to file line/character ranges, and `apply_actions` rewrites the
+    /// file on disk. Covers the multi-line `@argumentDefinitions` block and a
+    /// spread carrying a directive before `@arguments` (which must be kept).
+    #[test]
+    fn transform_fragment_arguments_end_to_end() {
+        let source = concat!(
+            "fragment fooFragment on Api\n",
+            "@argumentDefinitions(\n",
+            "  count: { type: \"Int\", defaultValue: 10 }\n",
+            ") {\n",
+            "  id\n",
+            "}\n",
+            "\n",
+            "query FooQuery {\n",
+            "  ...fooFragment @include(if: $cond) @arguments(count: $count)\n",
+            "}\n",
+        );
+
+        let mut dir = std::env::temp_dir();
+        dir.push(format!("relay_codemod_e2e_test_{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let file_name = "fooFragment.graphql";
+        let file_path = dir.join(file_name);
+        fs::write(&file_path, source).unwrap();
+
+        let document = graphql_syntax::parse_executable(
+            source,
+            common::SourceLocationKey::standalone(file_name),
+        )
+        .unwrap();
+        let diagnostics = crate::transform_fragment_arguments(&document.definitions);
+
+        let actions = relay_lsp::diagnostics_to_code_actions(&dir, &diagnostics);
+        apply_actions(actions).unwrap();
+
+        let result = fs::read_to_string(&file_path).unwrap();
+        fs::remove_dir_all(&dir).ok();
+
+        // `apply_actions` rebuilds the file from `lines().join("\n")`, so the
+        // original trailing newline is dropped. The `@include` directive is
+        // preserved before the migrated argument list.
+        let expected = [
+            "fragment fooFragment(",
+            "  $count: Int = 10",
+            ") on Api",
+            " {",
+            "  id",
+            "}",
+            "",
+            "query FooQuery {",
+            "  ...fooFragment(count: $count) @include(if: $cond) ",
+            "}",
+        ]
+        .join("\n");
+
+        assert_eq!(result, expected);
+    }
 }
 
 fn valid_percent(s: &str) -> Result<FeatureFlag, String> {
